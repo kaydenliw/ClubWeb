@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\Member;
 use App\Models\Transaction;
 use App\Models\Settlement;
+use App\Models\Charge;
 use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -21,9 +22,17 @@ class DashboardController extends Controller
             'total_organizations' => Organization::count(),
             'active_organizations' => Organization::where('status', 'active')->count(),
             'total_members' => Member::count(),
-            'total_revenue' => Transaction::where('status', 'completed')->where('type', 'payment')->sum('amount'),
+            'total_transactions_this_month' => Transaction::where('status', 'completed')
+                ->where('type', 'payment')
+                ->whereMonth('created_at', Carbon::now()->month)
+                ->whereYear('created_at', Carbon::now()->year)
+                ->sum('amount'),
             'pending_settlements' => Settlement::where('status', 'pending')->count(),
             'pending_settlements_amount' => Settlement::where('status', 'pending')->sum('amount'),
+            'pending_settlements_orgs' => Settlement::where('status', 'pending')
+                ->distinct('organization_id')
+                ->count('organization_id'),
+            'pending_charges' => Charge::where('approval_status', 'pending')->count(),
         ];
 
         // Recent transactions by organization (last 10)
@@ -39,37 +48,83 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        // Monthly revenue chart (last 6 months)
-        $monthlyRevenue = Transaction::where('type', 'payment')
+        // Monthly Total Transactions chart (Aug 2025 to Jan 2026)
+        $startDate = Carbon::create(2025, 8, 1);
+        $endDate = Carbon::create(2026, 1, 31);
+
+        $monthlyTransactions = Transaction::where('type', 'payment')
             ->where('status', 'completed')
-            ->where('created_at', '>=', Carbon::now()->subMonths(6))
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->get()
             ->groupBy(function($transaction) {
                 return Carbon::parse($transaction->created_at)->format('Y-m');
             })
             ->map(function($group) {
                 return [
-                    'month' => Carbon::parse($group->first()->created_at)->format('M Y'),
+                    'month' => Carbon::parse($group->first()->created_at)->format('M y'),
                     'total' => $group->sum('amount')
+                ];
+            });
+
+        // Fill in missing months with zero values
+        $allMonths = collect();
+        $current = $startDate->copy();
+        while ($current <= $endDate) {
+            $key = $current->format('Y-m');
+            $allMonths[$key] = [
+                'month' => $current->format('M y'),
+                'total' => $monthlyTransactions->get($key)['total'] ?? 0
+            ];
+            $current->addMonth();
+        }
+        $monthlyTransactions = $allMonths->values();
+
+        // Monthly Total Profit chart (last 6 months)
+        $monthlyProfit = Transaction::where('status', 'completed')
+            ->where('created_at', '>=', Carbon::now()->subMonths(6))
+            ->get()
+            ->groupBy(function($transaction) {
+                return Carbon::parse($transaction->created_at)->format('Y-m');
+            })
+            ->map(function($group) {
+                $payments = $group->where('type', 'payment')->sum('amount');
+                $refunds = $group->where('type', 'refund')->sum('amount');
+                return [
+                    'month' => Carbon::parse($group->first()->created_at)->format('M y'),
+                    'total' => $payments - $refunds
                 ];
             })
             ->sortBy('month')
             ->values();
 
-        // Organizations growth chart (last 6 months)
-        $organizationsGrowth = Organization::where('created_at', '>=', Carbon::now()->subMonths(6))
+        // Top 5 Organizations (Last month) with transaction amounts and member counts
+        $lastMonthStart = Carbon::now()->subMonth()->startOfMonth();
+        $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth();
+
+        $topOrganizations = Organization::withCount('members')
+            ->with(['transactions' => function($query) use ($lastMonthStart, $lastMonthEnd) {
+                $query->where('status', 'completed')
+                    ->where('type', 'payment')
+                    ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd]);
+            }])
             ->get()
-            ->groupBy(function($org) {
-                return Carbon::parse($org->created_at)->format('Y-m');
-            })
-            ->map(function($group) {
+            ->map(function($org) {
                 return [
-                    'month' => Carbon::parse($group->first()->created_at)->format('M Y'),
-                    'total' => $group->count()
+                    'name' => $org->name,
+                    'total_amount' => $org->transactions->sum('amount'),
+                    'members_count' => $org->members_count
                 ];
             })
-            ->sortBy('month')
+            ->sortByDesc('total_amount')
+            ->take(5)
             ->values();
+
+        // Organizations with ZERO transactions last month
+        $orgsWithZeroTransactions = Organization::whereDoesntHave('transactions', function($query) use ($lastMonthStart, $lastMonthEnd) {
+                $query->where('status', 'completed')
+                    ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd]);
+            })
+            ->count();
 
         // Last synced timestamp to accounting system
         $lastSyncedTransaction = Transaction::whereNotNull('synced_at')
@@ -101,8 +156,10 @@ class DashboardController extends Controller
             'stats',
             'recent_transactions',
             'new_members',
-            'monthlyRevenue',
-            'organizationsGrowth',
+            'monthlyTransactions',
+            'monthlyProfit',
+            'topOrganizations',
+            'orgsWithZeroTransactions',
             'lastSynced',
             'organizations'
         ))->with('maintenanceMode', Setting::isMaintenanceMode());

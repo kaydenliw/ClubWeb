@@ -13,7 +13,7 @@
         </div>
         @if($lastSynced)
         <div class="bg-green-50 border border-green-200 rounded-lg px-4 py-2">
-            <p class="text-xs text-green-600 font-medium">Last Synced to Accounting</p>
+            <p class="text-xs text-green-600 font-medium">Last Accounting sync since:</p>
             <p class="text-sm font-semibold text-green-900">{{ $lastSynced->format('d M Y, h:i A') }}</p>
         </div>
         @endif
@@ -60,7 +60,7 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         <!-- Organizations Card -->
         <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-5 border border-gray-100">
             <div class="flex items-start justify-between">
@@ -83,7 +83,7 @@
                 <div class="flex-1">
                     <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Members</p>
                     <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['total_members'] }}</p>
-                    <p class="text-xs text-gray-500 mt-2">Across all clubs</p>
+                    <p class="text-xs text-gray-500 mt-2">Across all organization</p>
                 </div>
                 <div class="bg-purple-50 rounded-lg p-3">
                     <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,12 +93,12 @@
             </div>
         </div>
 
-        <!-- Revenue Card -->
+        <!-- Total Transactions This Month Card -->
         <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-5 border border-gray-100">
             <div class="flex items-start justify-between">
                 <div class="flex-1">
-                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Revenue</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">RM {{ number_format($stats['total_revenue'], 2) }}</p>
+                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Transactions This Month</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">RM {{ number_format($stats['total_transactions_this_month'], 2) }}</p>
                     <p class="text-xs text-gray-500 mt-2">Completed payments</p>
                 </div>
                 <div class="bg-green-50 rounded-lg p-3">
@@ -115,7 +115,7 @@
                 <div class="flex-1">
                     <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Pending Settlements</p>
                     <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['pending_settlements'] }}</p>
-                    <p class="text-xs text-gray-500 mt-2">RM {{ number_format($stats['pending_settlements_amount'], 2) }}</p>
+                    <p class="text-xs text-gray-500 mt-2">RM {{ number_format($stats['pending_settlements_amount'], 2) }} <span class="text-gray-400">• {{ $stats['pending_settlements_orgs'] }} organizations</span></p>
                 </div>
                 <div class="bg-orange-50 rounded-lg p-3">
                     <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,24 +124,64 @@
                 </div>
             </div>
         </div>
+
+        <!-- Pending Charges Approval Card -->
+        <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-5 border border-gray-100">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Pending Charges Approval</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['pending_charges'] }}</p>
+                    <a href="{{ route('admin.charges.index', ['approval_status' => 'pending']) }}" class="text-xs text-blue-600 hover:text-blue-700 font-medium mt-2 inline-block">Review →</a>
+                </div>
+                <div class="bg-yellow-50 rounded-lg p-3">
+                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Organizations with ZERO transaction last month Card -->
+        <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-5 border border-gray-100">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Organizations with ZERO transaction last month</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $orgsWithZeroTransactions }}</p>
+                    <a href="{{ route('admin.organizations.index') }}" class="text-xs text-blue-600 hover:text-blue-700 font-medium mt-2 inline-block">View →</a>
+                </div>
+                <div class="bg-red-50 rounded-lg p-3">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Charts Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Monthly Revenue Chart -->
+        <!-- Monthly Total Transactions Chart -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-            <h3 class="text-base font-semibold text-gray-900 mb-4">Monthly Revenue (Last 6 Months)</h3>
+            <h3 class="text-base font-semibold text-gray-900 mb-4">Monthly Total Transactions</h3>
             <div style="height: 300px;">
-                <canvas id="monthlyRevenueChart"></canvas>
+                <canvas id="monthlyTransactionsChart"></canvas>
             </div>
         </div>
 
-        <!-- Organizations Growth Chart -->
+        <!-- Monthly Total Profit Chart -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-            <h3 class="text-base font-semibold text-gray-900 mb-4">Organizations Growth (Last 6 Months)</h3>
+            <h3 class="text-base font-semibold text-gray-900 mb-4">Monthly Total Profit (Last 6 Months)</h3>
             <div style="height: 300px;">
-                <canvas id="organizationsGrowthChart"></canvas>
+                <canvas id="monthlyProfitChart"></canvas>
             </div>
+        </div>
+    </div>
+
+    <!-- Top 5 Organizations Chart -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <h3 class="text-base font-semibold text-gray-900 mb-4">Top 5 Organization (Last month)</h3>
+        <div style="height: 350px;">
+            <canvas id="topOrganizationsChart"></canvas>
         </div>
     </div>
 
@@ -244,15 +284,15 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Monthly Revenue Chart
-const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
-new Chart(monthlyRevenueCtx, {
+// Monthly Total Transactions Chart
+const monthlyTransactionsCtx = document.getElementById('monthlyTransactionsChart').getContext('2d');
+new Chart(monthlyTransactionsCtx, {
     type: 'line',
     data: {
-        labels: {!! json_encode($monthlyRevenue->pluck('month')) !!},
+        labels: {!! json_encode($monthlyTransactions->pluck('month')) !!},
         datasets: [{
-            label: 'Revenue (RM)',
-            data: {!! json_encode($monthlyRevenue->pluck('total')) !!},
+            label: 'Transactions (RM)',
+            data: {!! json_encode($monthlyTransactions->pluck('total')) !!},
             borderColor: 'rgb(59, 130, 246)',
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
             tension: 0.4,
@@ -276,17 +316,17 @@ new Chart(monthlyRevenueCtx, {
     }
 });
 
-// Organizations Growth Chart
-const organizationsGrowthCtx = document.getElementById('organizationsGrowthChart').getContext('2d');
-new Chart(organizationsGrowthCtx, {
+// Monthly Total Profit Chart
+const monthlyProfitCtx = document.getElementById('monthlyProfitChart').getContext('2d');
+new Chart(monthlyProfitCtx, {
     type: 'bar',
     data: {
-        labels: {!! json_encode($organizationsGrowth->pluck('month')) !!},
+        labels: {!! json_encode($monthlyProfit->pluck('month')) !!},
         datasets: [{
-            label: 'New Organizations',
-            data: {!! json_encode($organizationsGrowth->pluck('total')) !!},
-            backgroundColor: 'rgba(59, 130, 246, 0.8)',
-            borderColor: 'rgb(59, 130, 246)',
+            label: 'Profit (RM)',
+            data: {!! json_encode($monthlyProfit->pluck('total')) !!},
+            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+            borderColor: 'rgb(34, 197, 94)',
             borderWidth: 1
         }]
     },
@@ -297,7 +337,82 @@ new Chart(organizationsGrowthCtx, {
         scales: {
             y: {
                 beginAtZero: true,
-                ticks: { stepSize: 1 }
+                ticks: {
+                    callback: function(value) {
+                        return 'RM ' + value.toLocaleString();
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Top 5 Organizations Chart with dual y-axis
+const topOrgsCtx = document.getElementById('topOrganizationsChart').getContext('2d');
+new Chart(topOrgsCtx, {
+    type: 'bar',
+    data: {
+        labels: {!! json_encode($topOrganizations->pluck('name')) !!},
+        datasets: [{
+            label: 'Transaction Amount (RM)',
+            data: {!! json_encode($topOrganizations->pluck('total_amount')) !!},
+            backgroundColor: 'rgba(59, 130, 246, 0.8)',
+            borderColor: 'rgb(59, 130, 246)',
+            borderWidth: 1,
+            yAxisID: 'y'
+        }, {
+            label: '# of Members',
+            data: {!! json_encode($topOrganizations->pluck('members_count')) !!},
+            backgroundColor: 'rgba(168, 85, 247, 0.8)',
+            borderColor: 'rgb(168, 85, 247)',
+            borderWidth: 1,
+            yAxisID: 'y1'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Transaction Amount (RM)'
+                },
+                ticks: {
+                    callback: function(value) {
+                        return 'RM ' + value.toLocaleString();
+                    }
+                }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: '# of Members'
+                },
+                grid: {
+                    drawOnChartArea: false
+                },
+                ticks: {
+                    stepSize: 1
+                }
             }
         }
     }

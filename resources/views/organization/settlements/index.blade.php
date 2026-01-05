@@ -26,9 +26,15 @@
         <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-medium text-gray-500 uppercase">Total Settled</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-2">RM {{ number_format($stats['total_settled'], 2) }}</p>
-                    <p class="text-xs text-gray-500 mt-1">Completed settlements</p>
+                    <p class="text-xs font-medium text-gray-500 uppercase">Last Settlement</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-2">
+                        RM {{ $stats['last_settlement'] ? number_format($stats['last_settlement']->amount, 2) : '0.00' }}
+                    </p>
+                    @if($stats['last_settlement'] && $stats['last_settlement']->completed_at)
+                        <p class="text-xs text-gray-500 mt-1">{{ $stats['last_settlement']->completed_at->format('d/m/Y H:i') }}</p>
+                    @else
+                        <p class="text-xs text-gray-500 mt-1">No settlements yet</p>
+                    @endif
                 </div>
                 <div class="bg-gray-100 rounded-lg p-3">
                     <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,9 +47,15 @@
         <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-medium text-gray-500 uppercase">Pending Settlement</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-2">RM {{ number_format($stats['pending_settlement'], 2) }}</p>
-                    <p class="text-xs text-gray-500 mt-1">Awaiting processing</p>
+                    <p class="text-xs font-medium text-gray-500 uppercase">Upcoming Settlement</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-2">
+                        RM {{ $stats['upcoming_settlement'] ? number_format($stats['upcoming_settlement']->amount, 2) : '0.00' }}
+                    </p>
+                    @if($stats['upcoming_settlement'] && $stats['upcoming_settlement']->scheduled_date)
+                        <p class="text-xs text-gray-500 mt-1">{{ \Carbon\Carbon::parse($stats['upcoming_settlement']->scheduled_date)->format('d/m/Y') }}</p>
+                    @else
+                        <p class="text-xs text-gray-500 mt-1">No upcoming settlements</p>
+                    @endif
                 </div>
                 <div class="bg-gray-100 rounded-lg p-3">
                     <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -56,9 +68,13 @@
         <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-medium text-gray-500 uppercase">Total Settlements</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-2">{{ $stats['total_settlements'] }}</p>
-                    <p class="text-xs text-gray-500 mt-1">All time</p>
+                    <p class="text-xs font-medium text-gray-500 uppercase">Pending Settlement</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-2">RM {{ number_format($stats['pending_settlement'], 2) }}</p>
+                    @if($stats['pending_settlement_date'])
+                        <p class="text-xs text-gray-500 mt-1">Due: {{ \Carbon\Carbon::parse($stats['pending_settlement_date'])->format('d/m/Y') }}</p>
+                    @else
+                        <p class="text-xs text-gray-500 mt-1">No pending settlements</p>
+                    @endif
                 </div>
                 <div class="bg-gray-100 rounded-lg p-3">
                     <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,6 +152,19 @@
                     </tr>
                     @endforelse
                 </tbody>
+
+                <!-- TOTAL Row in tfoot -->
+                @if($settlements->count() > 0)
+                <tfoot class="bg-blue-50 font-semibold border-t-2 border-blue-200">
+                    <tr>
+                        <td class="px-4 py-3 text-right text-sm text-gray-900">TOTAL:</td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm font-bold text-gray-900">RM {{ number_format($totals->total_amount ?? 0, 2) }}</span>
+                        </td>
+                        <td colspan="3"></td>
+                    </tr>
+                </tfoot>
+                @endif
             </table>
         </div>
     </div>
@@ -149,7 +178,7 @@ $(document).ready(function() {
         "pageLength": 15,
         "order": [[3, "desc"]],
         "columnDefs": [
-            { "orderable": false, "targets": 4 }
+            { "orderable": false, "targets": [4] }
         ],
         "language": {
             "paginate": {

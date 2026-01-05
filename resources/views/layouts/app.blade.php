@@ -61,12 +61,22 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
-        @if(session('success'))
-            showToast("{{ session('success') }}", 'success');
-        @endif
-        @if(session('error'))
-            showToast("{{ session('error') }}", 'error');
-        @endif
+
+        // Show toast on page load if there's a session message
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('success'))
+                showToast({!! json_encode(session('success')) !!}, 'success');
+            @endif
+            @if(session('error'))
+                showToast({!! json_encode(session('error')) !!}, 'error');
+            @endif
+            @if(session('info'))
+                showToast({!! json_encode(session('info')) !!}, 'info');
+            @endif
+            @if(session('warning'))
+                showToast({!! json_encode(session('warning')) !!}, 'warning');
+            @endif
+        });
     </script>
 </body>
 </html>

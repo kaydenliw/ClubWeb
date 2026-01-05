@@ -8,12 +8,6 @@
     ['label' => 'Profile Settings', 'url' => null]
 ]])
 <div class="max-w-4xl mx-auto space-y-6">
-    @if(session('success'))
-    <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-        {{ session('success') }}
-    </div>
-    @endif
-
     <!-- Profile Information -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
         <div class="mb-6">

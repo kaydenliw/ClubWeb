@@ -98,4 +98,67 @@ class SettlementController extends Controller
                 ->with('error', 'Failed to delete settlement. ' . $e->getMessage());
         }
     }
+
+    public function approve(Settlement $settlement)
+    {
+        $settlement->update([
+            'approval_status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+            'reject_reason' => null
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Settlement approved successfully']);
+    }
+
+    public function reject(Request $request, Settlement $settlement)
+    {
+        $validated = $request->validate([
+            'reject_reason' => 'required|string|max:500'
+        ]);
+
+        $settlement->update([
+            'approval_status' => 'rejected',
+            'reject_reason' => $validated['reject_reason'],
+            'approved_at' => null,
+            'approved_by' => null
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Settlement rejected successfully']);
+    }
+
+    public function bulkApprove(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:settlements,id'
+        ]);
+
+        Settlement::whereIn('id', $validated['ids'])->update([
+            'approval_status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+            'reject_reason' => null
+        ]);
+
+        return response()->json(['success' => true, 'message' => count($validated['ids']) . ' settlement(s) approved']);
+    }
+
+    public function bulkReject(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:settlements,id',
+            'reject_reason' => 'required|string|max:500'
+        ]);
+
+        Settlement::whereIn('id', $validated['ids'])->update([
+            'approval_status' => 'rejected',
+            'reject_reason' => $validated['reject_reason'],
+            'approved_at' => null,
+            'approved_by' => null
+        ]);
+
+        return response()->json(['success' => true, 'message' => count($validated['ids']) . ' settlement(s) rejected']);
+    }
 }

@@ -48,19 +48,31 @@ class ChargeController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'amount' => 'required|numeric|min:0',
-            'type' => 'required|in:monthly,yearly,one-time',
-            'status' => 'required|in:active,inactive',
+            'is_recurring' => 'required|boolean',
+            'recurring_months' => 'nullable|integer|min:1|max:12',
+            'status' => 'nullable|in:active,inactive',
+            'scheduled_at' => 'nullable|date',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'approval_status' => 'nullable|in:draft,pending',
         ]);
 
         $validated['organization_id'] = auth()->user()->organization_id;
+        $validated['status'] = $validated['status'] ?? 'active';
+        $validated['approval_status'] = $validated['approval_status'] ?? 'draft';
+
+        // Set recurring_frequency
+        if ($validated['is_recurring']) {
+            $validated['recurring_frequency'] = 'monthly';
+        } else {
+            $validated['recurring_frequency'] = 'one-time';
+        }
 
         // Handle image upload
         if ($request->hasFile('image')) {
-            $validated['image_path'] = $request->file('image')->store('charges', 'public');
+            $validated['image'] = $request->file('image')->store('charges', 'public');
         }
 
         Charge::create($validated);
@@ -96,21 +108,39 @@ class ChargeController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'amount' => 'required|numeric|min:0',
-            'type' => 'required|in:monthly,yearly,one-time',
+            'is_recurring' => 'required|boolean',
+            'recurring_months' => 'nullable|integer|min:1|max:12',
             'status' => 'required|in:active,inactive',
+            'scheduled_at' => 'nullable|date',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'approval_status' => 'nullable|in:draft,pending',
         ]);
+
+        // Set recurring_frequency based on is_recurring and recurring_months
+        if ($validated['is_recurring']) {
+            $validated['recurring_frequency'] = 'monthly'; // Will be calculated based on months
+        } else {
+            $validated['recurring_frequency'] = 'one-time';
+        }
+
+        // Handle image removal
+        if ($request->input('remove_image') == '1') {
+            if ($charge->image) {
+                Storage::disk('public')->delete($charge->image);
+            }
+            $validated['image'] = null;
+        }
 
         // Handle image upload
         if ($request->hasFile('image')) {
             // Delete old image
-            if ($charge->image_path) {
-                Storage::disk('public')->delete($charge->image_path);
+            if ($charge->image) {
+                Storage::disk('public')->delete($charge->image);
             }
-            $validated['image_path'] = $request->file('image')->store('charges', 'public');
+            $validated['image'] = $request->file('image')->store('charges', 'public');
         }
 
         $charge->update($validated);
@@ -126,8 +156,8 @@ class ChargeController extends Controller
         }
 
         // Delete image if exists
-        if ($charge->image_path) {
-            Storage::disk('public')->delete($charge->image_path);
+        if ($charge->image) {
+            Storage::disk('public')->delete($charge->image);
         }
 
         $charge->delete();
@@ -151,8 +181,8 @@ class ChargeController extends Controller
 
         foreach ($charges as $charge) {
             // Delete image if exists
-            if ($charge->image_path) {
-                Storage::disk('public')->delete($charge->image_path);
+            if ($charge->image) {
+                Storage::disk('public')->delete($charge->image);
             }
             $charge->delete();
         }
@@ -181,5 +211,20 @@ class ChargeController extends Controller
             'success' => true,
             'message' => $updated . ' charge(s) updated successfully.'
         ]);
+    }
+
+    public function submitForApproval(Charge $charge)
+    {
+        if ($charge->organization_id !== auth()->user()->organization_id) {
+            abort(403);
+        }
+
+        $charge->update([
+            'approval_status' => 'pending',
+            'reject_reason' => null
+        ]);
+
+        return redirect()->route('organization.charges.show', $charge)
+            ->with('success', 'Charge submitted for approval.');
     }
 }

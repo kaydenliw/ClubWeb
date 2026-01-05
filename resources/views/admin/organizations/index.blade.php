@@ -52,12 +52,6 @@
         </div>
     </div>
 
-    @if(session('success'))
-        <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-            {{ session('success') }}
-        </div>
-    @endif
-
     <!-- Filters -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
         <form method="GET" class="flex flex-wrap items-center gap-3">
@@ -96,7 +90,9 @@
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Contact</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Bank Details</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Members</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Transactions</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Transaction This Month</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Settlement</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Announcement</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Status</th>
                         <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
                     </tr>
@@ -127,7 +123,53 @@
                             <span class="text-sm font-semibold text-gray-900">{{ $org->members_count }}</span>
                         </td>
                         <td class="px-4 py-3 text-center">
-                            <span class="text-sm font-semibold text-gray-900">{{ $org->transactions_count }}</span>
+                            <div class="text-sm font-semibold text-gray-900">{{ $org->transactions->count() }} Transactions</div>
+                            <div class="text-xs text-gray-600">RM {{ number_format($org->transactions->sum('amount'), 2) }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            @php
+                                $latestSettlement = $org->settlements->first();
+                            @endphp
+                            @if($latestSettlement)
+                                @if($latestSettlement->status == 'completed')
+                                    <div class="text-xs">
+                                        <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium">DONE</span>
+                                        <div class="text-gray-500 mt-1">{{ $latestSettlement->completed_at ? \Carbon\Carbon::parse($latestSettlement->completed_at)->format('d/m/y') : '-' }}</div>
+                                    </div>
+                                @else
+                                    <div class="text-xs">
+                                        <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full font-medium">PENDING</span>
+                                        <div class="text-gray-500 mt-1">Next: {{ $latestSettlement->scheduled_date ? \Carbon\Carbon::parse($latestSettlement->scheduled_date)->format('d/m/y') : '-' }}</div>
+                                    </div>
+                                @endif
+                            @else
+                                <span class="text-xs text-gray-400">-</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            @php
+                                $latestAnnouncement = $org->announcements->first();
+                            @endphp
+                            @if($latestAnnouncement)
+                                @if($latestAnnouncement->status == 'draft')
+                                    <span class="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full font-medium">Not Submitted</span>
+                                @elseif($latestAnnouncement->status == 'pending')
+                                    <span class="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-full font-medium">Pending Approval</span>
+                                @elseif($latestAnnouncement->status == 'approved' && !$latestAnnouncement->published_at)
+                                    <span class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full font-medium">Approved & Pending Publish</span>
+                                @elseif($latestAnnouncement->status == 'approved' && $latestAnnouncement->published_at)
+                                    <span class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full font-medium">Approved & Published</span>
+                                @elseif($latestAnnouncement->status == 'rejected')
+                                    <div class="text-xs">
+                                        <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full font-medium">Rejected by Admin</span>
+                                        @if($latestAnnouncement->rejection_reason)
+                                            <div class="text-gray-500 mt-1 text-left max-w-xs">{{ Str::limit($latestAnnouncement->rejection_reason, 50) }}</div>
+                                        @endif
+                                    </div>
+                                @endif
+                            @else
+                                <span class="text-xs text-gray-400">-</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-center">
                             <span class="px-2 py-1 text-xs font-medium rounded-full {{ $org->status == 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
@@ -179,7 +221,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">
+                        <td colspan="9" class="px-4 py-8 text-center text-sm text-gray-500">
                             <div class="flex flex-col items-center">
                                 <svg class="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
@@ -203,7 +245,7 @@ $(document).ready(function() {
         "pageLength": 15,
         "order": [[0, "asc"]],
         "columnDefs": [
-            { "orderable": false, "targets": 6 }
+            { "orderable": false, "targets": [5, 6, 8] }
         ],
         "language": {
             "paginate": {

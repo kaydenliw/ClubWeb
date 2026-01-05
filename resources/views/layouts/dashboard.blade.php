@@ -188,6 +188,7 @@
             font-weight: bold;
         }
     </style>
+    @stack('styles')
 </head>
 <body class="bg-gray-50">
     <div class="flex h-screen overflow-hidden">
@@ -283,21 +284,23 @@
         }
 
         // Show toast on page load if there's a session message
-        @if(session('success'))
-            showToast("{{ session('success') }}", 'success');
-        @endif
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('success'))
+                showToast({!! json_encode(session('success')) !!}, 'success');
+            @endif
 
-        @if(session('error'))
-            showToast("{{ session('error') }}", 'error');
-        @endif
+            @if(session('error'))
+                showToast({!! json_encode(session('error')) !!}, 'error');
+            @endif
 
-        @if(session('info'))
-            showToast("{{ session('info') }}", 'info');
-        @endif
+            @if(session('info'))
+                showToast({!! json_encode(session('info')) !!}, 'info');
+            @endif
 
-        @if(session('warning'))
-            showToast("{{ session('warning') }}", 'warning');
-        @endif
+            @if(session('warning'))
+                showToast({!! json_encode(session('warning')) !!}, 'warning');
+            @endif
+        });
 
         // Confirmation Dialog Functions
         let confirmCallback = null;
@@ -359,6 +362,11 @@
     <script>
         function showLoading() {
             document.getElementById('loadingOverlay').style.display = 'flex';
+
+            // Auto-hide after 3 seconds for export/download operations
+            setTimeout(function() {
+                hideLoading();
+            }, 3000);
         }
 
         function hideLoading() {

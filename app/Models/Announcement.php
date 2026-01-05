@@ -12,22 +12,32 @@ class Announcement extends Model
 
     protected $fillable = [
         'organization_id',
+        'created_by',
         'title',
         'content',
         'scheduled_at',
         'is_published',
         'published_at',
+        'publish_date',
+        'approval_status',
+        'reject_reason',
     ];
 
     protected $casts = [
         'scheduled_at' => 'datetime',
         'is_published' => 'boolean',
         'published_at' => 'datetime',
+        'publish_date' => 'datetime',
     ];
 
     public function organization()
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function scopePublished($query)

@@ -52,16 +52,10 @@
         </div>
     </div>
 
-    @if(session('success'))
-        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 mb-4">
-            {{ session('success') }}
-        </div>
-    @endif
-
     <div class="bg-white rounded-lg shadow-sm border border-gray-100 mb-4 p-4">
         <form method="GET" class="flex flex-wrap items-center gap-3">
             <div class="flex-1 min-w-[250px]">
-                <input type="text" name="search" placeholder="Search by name, email, phone, or car plate..."
+                <input type="text" name="search" placeholder="Search by name, email, or phone..."
                        value="{{ request('search') }}"
                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             </div>
@@ -81,7 +75,7 @@
         </form>
     </div>
 
-    <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-visible">
         <!-- Bulk Actions Bar -->
         <div id="bulkActionsBar" class="hidden bg-blue-50 border-b border-blue-200 px-6 py-3">
             <div class="flex items-center justify-between">
@@ -102,7 +96,7 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto overflow-y-visible">
             <table id="membersTable" class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
@@ -111,8 +105,13 @@
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Member</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Membership Info</th>
+                        @if($organization->organizationType && $organization->organizationType->slug === 'car_club')
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Car Details</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Charges</th>
+                        @endif
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Charges</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Payment Status</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Next Renewal</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
@@ -139,11 +138,45 @@
                             <div class="text-xs text-gray-500">{{ $member->phone ?? '-' }}</div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-sm text-gray-900">{{ $member->car_brand ?? '-' }} {{ $member->car_model ?? '' }}</div>
-                            <div class="text-xs text-gray-500">{{ $member->car_plate ?? '-' }}</div>
+                            @if($member->organizations->first())
+                                @php $org = $member->organizations->first(); @endphp
+                                <div class="text-sm text-gray-900">{{ ucfirst($org->pivot->role ?? 'Member') }}</div>
+                                <div class="text-xs text-gray-500">{{ $org->pivot->membership_number ?? '-' }}</div>
+                            @else
+                                <div class="text-sm text-gray-500">-</div>
+                            @endif
+                        </td>
+                        @if($organization->organizationType && $organization->organizationType->slug === 'car_club')
+                        <td class="px-6 py-4">
+                            @if(isset($member->typeDetails))
+                                <div class="text-sm text-gray-900">{{ $member->typeDetails->car_brand }} {{ $member->typeDetails->car_model }}</div>
+                                <div class="text-xs text-gray-500">{{ $member->typeDetails->car_plate ?? '-' }}</div>
+                            @else
+                                <div class="text-sm text-gray-500">-</div>
+                            @endif
+                        </td>
+                        @endif
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">{{ $member->charges_display ?: '-' }}</div>
                         </td>
                         <td class="px-6 py-4 text-center">
-                            <span class="text-sm font-semibold text-gray-900">{{ $member->charges_count }}</span>
+                            @php $paymentStatus = $member->payment_status; @endphp
+                            <span class="px-3 py-1 text-xs font-medium rounded-full
+                                {{ $paymentStatus['color'] === 'red' ? 'bg-red-100 text-red-700' : '' }}
+                                {{ $paymentStatus['color'] === 'yellow' ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                {{ $paymentStatus['color'] === 'green' ? 'bg-green-100 text-green-700' : '' }}
+                                {{ $paymentStatus['color'] === 'gray' ? 'bg-gray-100 text-gray-700' : '' }}">
+                                {{ $paymentStatus['label'] }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="text-sm text-gray-900">
+                                @if($member->next_renewal_date)
+                                    {{ \Carbon\Carbon::parse($member->next_renewal_date)->format('d M Y') }}
+                                @else
+                                    <span class="text-gray-500">-</span>
+                                @endif
+                            </div>
                         </td>
                         <td class="px-6 py-4 text-center">
                             <span class="px-3 py-1 text-xs font-medium {{ $member->status == 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
@@ -166,7 +199,9 @@
                                      x-transition:leave="transition ease-in duration-75"
                                      x-transition:leave-start="transform opacity-100 scale-100"
                                      x-transition:leave-end="transform opacity-0 scale-95"
-                                     class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                     class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+                                     style="bottom: auto; top: 100%;"
+                                     x-bind:style="$el.getBoundingClientRect().bottom > window.innerHeight - 50 ? 'bottom: 100%; top: auto; margin-bottom: 0.5rem;' : ''">
                                     <a href="{{ route('organization.members.show', $member) }}"
                                        class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
                                         <svg class="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,7 +236,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                        <td colspan="10" class="px-6 py-8 text-center text-gray-500">
                             <div class="flex flex-col items-center">
                                 <svg class="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
@@ -221,22 +256,8 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    $('#membersTable').DataTable({
-        "pageLength": 15,
-        "order": [[1, "asc"]],
-        "columnDefs": [
-            { "orderable": false, "targets": [0, 6] }
-        ],
-        "language": {
-            "paginate": {
-                "previous": "← Previous",
-                "next": "Next →"
-            },
-            "info": "Showing _START_ to _END_ of _TOTAL_ members",
-            "infoEmpty": "No members available",
-            "zeroRecords": "No matching members found"
-        }
-    });
+    // Disable DataTables - using Laravel pagination instead
+    // Just add basic sorting functionality
 
     // Select All functionality
     $('#selectAll').on('change', function() {

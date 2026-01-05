@@ -78,10 +78,21 @@
             </h3>
             <div class="space-y-3">
                 <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span class="text-sm font-medium text-gray-500">Type</span>
-                    <span class="px-3 py-1 text-xs font-semibold rounded-full
-                        {{ $transaction->type == 'payment' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
-                        {{ ucfirst($transaction->type) }}
+                    <span class="text-sm font-medium text-gray-500">Charges/Plan</span>
+                    <span class="text-sm font-semibold text-gray-900">{{ $transaction->charge ? $transaction->charge->title : '-' }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="text-sm font-medium text-gray-500">Recurring</span>
+                    <span class="text-sm font-semibold text-gray-900">
+                        @if($transaction->charge)
+                            @if($transaction->charge->is_recurring)
+                                {{ $transaction->charge->recurring_months }} {{ $transaction->charge->recurring_months == 1 ? 'month' : 'months' }}
+                            @else
+                                One-Time
+                            @endif
+                        @else
+                            -
+                        @endif
                     </span>
                 </div>
                 <div class="flex justify-between items-center py-2 border-b border-gray-100">
@@ -93,10 +104,69 @@
                         {{ ucfirst($transaction->status) }}
                     </span>
                 </div>
-                <div class="flex justify-between items-center py-2">
-                    <span class="text-sm font-medium text-gray-500">Date & Time</span>
-                    <span class="text-sm font-semibold text-gray-900">{{ $transaction->created_at->format('M d, Y h:i A') }}</span>
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="text-sm font-medium text-gray-500">Sync Status</span>
+                    @if($transaction->synced_to_accounting)
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Synced</span>
+                    @else
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">Not Synced</span>
+                    @endif
                 </div>
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="text-sm font-medium text-gray-500">Created Date & Time</span>
+                    <span class="text-sm font-semibold text-gray-900">{{ $transaction->created_at->format('d/m/Y H:i') }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2">
+                    <span class="text-sm font-medium text-gray-500">Last Updated Date & Time</span>
+                    <span class="text-sm font-semibold text-gray-900">{{ $transaction->updated_at->format('d/m/Y H:i') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settlement Details Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            Settlement Details
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-3">
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="text-sm font-medium text-gray-500">Settlement Amount</span>
+                    <span class="text-sm font-semibold text-gray-900">RM {{ number_format($transaction->amount, 2) }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="text-sm font-medium text-gray-500">Platform Fee</span>
+                    <span class="text-sm font-semibold text-red-600">RM {{ number_format($transaction->platform_fee, 2) }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2">
+                    <span class="text-sm font-medium text-gray-500">Net Amount</span>
+                    <span class="text-lg font-bold text-green-600">RM {{ number_format($transaction->amount - $transaction->platform_fee, 2) }}</span>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="text-sm font-medium text-gray-500">Settlement Status</span>
+                    @if($transaction->settlement_id)
+                        <div class="text-right">
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Settled</span>
+                            @if($transaction->settlement && $transaction->settlement->completed_at)
+                                <p class="text-xs text-gray-500 mt-1">{{ $transaction->settlement->completed_at->format('d/m/y H:i') }}</p>
+                            @endif
+                        </div>
+                    @else
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">Pending</span>
+                    @endif
+                </div>
+                @if($transaction->settlement_id && $transaction->settlement)
+                <div class="flex justify-between items-center py-2">
+                    <span class="text-sm font-medium text-gray-500">Settlement Number</span>
+                    <span class="text-sm font-semibold text-gray-900">{{ $transaction->settlement->settlement_number }}</span>
+                </div>
+                @endif
             </div>
         </div>
     </div>

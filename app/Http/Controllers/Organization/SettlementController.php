@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Organization;
 use App\Http\Controllers\Controller;
 use App\Models\Settlement;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SettlementController extends Controller
 {
@@ -27,20 +28,34 @@ class SettlementController extends Controller
             $query->whereDate('settlement_date', '<=', $request->date_to);
         }
 
-        $settlements = $query->latest('settlement_date')->paginate(15)->withQueryString();
+        $settlements = $query->latest('settlement_date')->get();
+
+        // Get last completed settlement
+        $lastSettlement = Settlement::where('organization_id', $orgId)
+            ->where('status', 'completed')
+            ->latest('completed_at')
+            ->first();
+
+        // Get next upcoming settlement
+        $upcomingSettlement = Settlement::where('organization_id', $orgId)
+            ->whereIn('status', ['pending', 'processing'])
+            ->orderBy('scheduled_date', 'asc')
+            ->first();
 
         // Calculate stats
         $stats = [
-            'total_settled' => Settlement::where('organization_id', $orgId)
-                ->where('status', 'completed')
-                ->sum('amount'),
+            'last_settlement' => $lastSettlement,
+            'upcoming_settlement' => $upcomingSettlement,
             'pending_settlement' => Settlement::where('organization_id', $orgId)
-                ->where('status', 'pending')
+                ->whereIn('status', ['pending', 'processing'])
                 ->sum('amount'),
-            'total_settlements' => Settlement::where('organization_id', $orgId)->count(),
+            'pending_settlement_date' => $upcomingSettlement ? $upcomingSettlement->scheduled_date : null,
         ];
 
-        return view('organization.settlements.index', compact('settlements', 'stats'));
+        // Calculate totals for filtered results
+        $totals = $query->selectRaw('SUM(amount) as total_amount')->first();
+
+        return view('organization.settlements.index', compact('settlements', 'stats', 'totals'));
     }
 
     public function show(Settlement $settlement)
@@ -49,7 +64,15 @@ class SettlementController extends Controller
             abort(403);
         }
 
-        return view('organization.settlements.show', compact('settlement'));
+        // Load transactions with charge details
+        $settlement->load(['transactions.charge']);
+
+        // Calculate totals
+        $totalAmount = $settlement->transactions->sum('amount');
+        $totalPlatformFee = $settlement->transactions->sum('platform_fee');
+        $netAmount = $totalAmount - $totalPlatformFee;
+
+        return view('organization.settlements.show', compact('settlement', 'totalAmount', 'totalPlatformFee', 'netAmount'));
     }
 
     public function editBankDetails()
@@ -62,14 +85,39 @@ class SettlementController extends Controller
     {
         $validated = $request->validate([
             'bank_name' => 'required|string|max:255',
-            'bank_account_name' => 'required|string|max:255',
+            'bank_account_holder' => 'required|string|max:255',
             'bank_account_number' => 'required|string|max:50',
         ]);
 
         $organization = auth()->user()->organization;
-        $organization->update($validated);
+
+        // Store pending bank details for admin approval
+        $organization->update([
+            'pending_bank_name' => $validated['bank_name'],
+            'pending_bank_account_holder' => $validated['bank_account_holder'],
+            'pending_bank_account_number' => $validated['bank_account_number'],
+            'bank_details_status' => 'pending',
+            'bank_details_reject_reason' => null,
+        ]);
 
         return redirect()->route('organization.settlements.index')
-            ->with('success', 'Bank details updated successfully.');
+            ->with('success', 'Bank details submitted for admin approval.');
+    }
+
+    public function downloadReceipt(Settlement $settlement)
+    {
+        if ($settlement->organization_id !== auth()->user()->organization_id) {
+            abort(403);
+        }
+
+        $settlement->load(['transactions.charge', 'organization']);
+
+        $totalAmount = $settlement->transactions->sum('amount');
+        $totalPlatformFee = $settlement->transactions->sum('platform_fee');
+        $netAmount = $totalAmount - $totalPlatformFee;
+
+        $pdf = Pdf::loadView('organization.settlements.receipt-pdf', compact('settlement', 'totalAmount', 'totalPlatformFee', 'netAmount'));
+
+        return $pdf->stream('settlement-receipt-' . $settlement->settlement_number . '.pdf');
     }
 }

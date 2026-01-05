@@ -14,8 +14,10 @@ class Transaction extends Model
         'organization_id',
         'member_id',
         'charge_id',
+        'settlement_id',
         'transaction_number',
         'amount',
+        'platform_fee',
         'type',
         'payment_method',
         'status',
@@ -26,6 +28,7 @@ class Transaction extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'platform_fee' => 'decimal:2',
         'synced_to_accounting' => 'boolean',
         'synced_at' => 'datetime',
     ];
@@ -43,5 +46,10 @@ class Transaction extends Model
     public function charge()
     {
         return $this->belongsTo(Charge::class);
+    }
+
+    public function settlement()
+    {
+        return $this->belongsTo(Settlement::class);
     }
 }

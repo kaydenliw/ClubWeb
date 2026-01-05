@@ -9,12 +9,12 @@
 ]])
 <div class="space-y-4">
     <!-- Header -->
-    <div class="flex justify-between items-center">
+    <div class="flex items-start justify-between gap-6">
         <div>
             <h3 class="text-lg font-semibold text-gray-900">Manage Transactions</h3>
             <p class="text-sm text-gray-500 mt-1">View and sync transactions across organizations</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-shrink-0">
             <div class="relative" x-data="{ open: false }">
                 <button @click="open = !open" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,18 +51,6 @@
             </button>
         </div>
     </div>
-
-    @if(session('success'))
-        <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
-            {{ session('error') }}
-        </div>
-    @endif
 
     <!-- Filters -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
@@ -102,6 +90,23 @@
             </a>
             @endif
         </form>
+    </div>
+
+    <!-- Bulk Actions Bar -->
+    <div id="bulkActionsBar" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-blue-900">
+                <span id="selectedCount">0</span> transaction(s) selected
+            </span>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="markAsSettled()" class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition">
+                    Mark as Settled
+                </button>
+                <button type="button" onclick="clearSelection()" class="text-sm text-blue-600 hover:text-blue-800">
+                    Clear
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Transactions Table -->
@@ -187,6 +192,16 @@
                                         </svg>
                                         View Details
                                     </a>
+                                    @if($txn->status == 'completed' && !$txn->settlement_id)
+                                    <button type="button"
+                                            onclick="markSingleAsSettled({{ $txn->id }})"
+                                            class="flex items-center w-full px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 transition">
+                                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        Mark as Settled
+                                    </button>
+                                    @endif
                                     <div class="border-t border-gray-100 my-1"></div>
                                     <form id="delete-transaction-{{ $txn->id }}" action="{{ route('admin.transactions.destroy', $txn) }}" method="POST" style="display: none;">
                                         @csrf
@@ -215,11 +230,33 @@
             </table>
         </div>
     </div>
+
+    <!-- Settlement Preview Modal -->
+    <div id="settlementModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Settlement Preview</h3>
+                <div id="settlementContent" class="space-y-4">
+                    <!-- Content will be loaded here -->
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="closeSettlementModal()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-300 transition">
+                        Cancel
+                    </button>
+                    <button onclick="confirmSettlement()" class="flex-1 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition">
+                        Confirm Settlement
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
 @push('scripts')
 <script>
+let selectedTransactionIds = [];
+
 $(document).ready(function() {
     $('#transactionsTable').DataTable({
         "pageLength": 15,
@@ -240,8 +277,25 @@ $(document).ready(function() {
 
     $('#selectAll').on('change', function() {
         $('.transaction-checkbox:not(:disabled)').prop('checked', this.checked);
+        updateBulkActions();
+    });
+
+    $(document).on('change', '.transaction-checkbox', function() {
+        updateBulkActions();
     });
 });
+
+function updateBulkActions() {
+    const selectedCount = $('.transaction-checkbox:checked').length;
+    $('#selectedCount').text(selectedCount);
+    $('#bulkActionsBar').toggleClass('hidden', selectedCount === 0);
+}
+
+function clearSelection() {
+    $('.transaction-checkbox').prop('checked', false);
+    $('#selectAll').prop('checked', false);
+    updateBulkActions();
+}
 
 function syncSelected() {
     const selectedIds = $('.transaction-checkbox:checked').map(function() {
@@ -281,6 +335,132 @@ function syncSelected() {
         'Sync Now',
         'blue'
     );
+}
+
+function markAsSettled() {
+    selectedTransactionIds = $('.transaction-checkbox:checked').map(function() {
+        return $(this).val();
+    }).get();
+
+    if (selectedTransactionIds.length === 0) {
+        showToast('Please select at least one transaction', 'warning');
+        return;
+    }
+
+    showLoading();
+
+    $.ajax({
+        url: '{{ route("admin.transactions.settlement-preview") }}',
+        method: 'POST',
+        data: {
+            _token: '{{ csrf_token() }}',
+            transaction_ids: selectedTransactionIds
+        },
+        success: function(response) {
+            hideLoading();
+            if (response.success) {
+                showSettlementModal(response.data);
+            }
+        },
+        error: function(xhr) {
+            hideLoading();
+            const error = xhr.responseJSON?.error || 'Failed to load settlement preview';
+            showToast(error, 'error');
+        }
+    });
+}
+
+function markSingleAsSettled(transactionId) {
+    selectedTransactionIds = [transactionId];
+    showLoading();
+
+    $.ajax({
+        url: '{{ route("admin.transactions.settlement-preview") }}',
+        method: 'POST',
+        data: {
+            _token: '{{ csrf_token() }}',
+            transaction_ids: [transactionId]
+        },
+        success: function(response) {
+            hideLoading();
+            if (response.success) {
+                showSettlementModal(response.data);
+            }
+        },
+        error: function(xhr) {
+            hideLoading();
+            const error = xhr.responseJSON?.error || 'Failed to load settlement preview';
+            showToast(error, 'error');
+        }
+    });
+}
+
+function showSettlementModal(data) {
+    const content = `
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <h4 class="font-semibold text-blue-900 mb-2">Organization Details</h4>
+            <p class="text-sm text-blue-800"><strong>Name:</strong> ${data.organization.name}</p>
+            <p class="text-sm text-blue-800"><strong>Bank:</strong> ${data.organization.bank_name}</p>
+            <p class="text-sm text-blue-800"><strong>Account Number:</strong> ${data.organization.bank_account_number}</p>
+            <p class="text-sm text-blue-800"><strong>Account Holder:</strong> ${data.organization.bank_account_holder}</p>
+        </div>
+
+        <div class="bg-gray-50 rounded-lg p-4">
+            <h4 class="font-semibold text-gray-900 mb-3">Settlement Summary</h4>
+            <div class="space-y-2">
+                <div class="flex justify-between py-2 border-b border-gray-200">
+                    <span class="text-sm text-gray-600">Transactions Count:</span>
+                    <span class="text-sm font-semibold text-gray-900">${data.transactions_count}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-200">
+                    <span class="text-sm text-gray-600">Total Amount:</span>
+                    <span class="text-sm font-semibold text-gray-900">RM ${data.total_amount}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-200">
+                    <span class="text-sm text-gray-600">Platform Fee:</span>
+                    <span class="text-sm font-semibold text-red-600">- RM ${data.total_platform_fee}</span>
+                </div>
+                <div class="flex justify-between py-3 bg-green-50 px-3 rounded-lg mt-2">
+                    <span class="text-base font-semibold text-green-900">Net Settlement Amount:</span>
+                    <span class="text-lg font-bold text-green-600">RM ${data.net_amount}</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('settlementContent').innerHTML = content;
+    document.getElementById('settlementModal').classList.remove('hidden');
+}
+
+function closeSettlementModal() {
+    document.getElementById('settlementModal').classList.add('hidden');
+    selectedTransactionIds = [];
+}
+
+function confirmSettlement() {
+    closeSettlementModal();
+    showLoading();
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ route("admin.transactions.mark-as-settled") }}';
+
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = '{{ csrf_token() }}';
+    form.appendChild(csrfInput);
+
+    selectedTransactionIds.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'transaction_ids[]';
+        input.value = id;
+        form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
 }
 </script>
 @endpush

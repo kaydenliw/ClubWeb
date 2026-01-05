@@ -215,23 +215,70 @@ class DatabaseSeeder extends Seeder
     private function createCharges($org, $orgIndex)
     {
         $charges = [
-            ['title' => 'Annual Membership Fee', 'description' => 'Yearly membership subscription', 'amount' => 150.00, 'type' => 'charge'],
-            ['title' => 'Monthly Meetup Fee', 'description' => 'Monthly gathering and activities', 'amount' => 30.00, 'type' => 'charge'],
-            ['title' => 'Track Day Registration', 'description' => 'Sepang Circuit track day event', 'amount' => 250.00, 'type' => 'charge'],
-            ['title' => 'Club Merchandise', 'description' => 'T-shirts, stickers, and accessories', 'amount' => 80.00, 'type' => 'charge'],
-            ['title' => 'Charity Drive Donation', 'description' => 'Support local community initiatives', 'amount' => 50.00, 'type' => 'donation'],
+            [
+                'title' => 'Annual Membership Fee',
+                'description' => 'Yearly membership subscription for all club benefits and activities',
+                'amount' => 150.00,
+                'type' => 'charge',
+                'is_recurring' => true,
+                'recurring_months' => 12,
+                'recurring_frequency' => 'annually',
+                'status' => 'active',
+                'approval_status' => 'approved',
+                'platform_fee_percentage' => 5.0,
+            ],
+            [
+                'title' => 'Monthly Meetup Fee',
+                'description' => 'Monthly gathering and activities including breakfast and venue',
+                'amount' => 30.00,
+                'type' => 'charge',
+                'is_recurring' => true,
+                'recurring_months' => 1,
+                'recurring_frequency' => 'monthly',
+                'status' => 'active',
+                'approval_status' => 'approved',
+                'platform_fee_percentage' => 5.0,
+            ],
+            [
+                'title' => 'Track Day Registration',
+                'description' => 'Sepang Circuit track day event - Full day access with professional instructors',
+                'amount' => 250.00,
+                'type' => 'charge',
+                'is_recurring' => false,
+                'recurring_frequency' => 'one-time',
+                'status' => 'active',
+                'approval_status' => 'pending',
+            ],
+            [
+                'title' => 'Club Merchandise',
+                'description' => 'Official club t-shirts, stickers, caps and accessories',
+                'amount' => 80.00,
+                'type' => 'charge',
+                'is_recurring' => false,
+                'recurring_frequency' => 'one-time',
+                'status' => 'active',
+                'approval_status' => 'approved',
+                'platform_fee_percentage' => 3.0,
+                'platform_fee_fixed' => 2.00,
+                'platform_fee_operator' => 'and',
+            ],
+            [
+                'title' => 'Charity Drive Donation',
+                'description' => 'Support local community initiatives and underprivileged families',
+                'amount' => 50.00,
+                'type' => 'donation',
+                'is_recurring' => false,
+                'recurring_frequency' => 'one-time',
+                'status' => 'inactive',
+                'approval_status' => 'pending',
+            ],
         ];
 
         foreach ($charges as $chargeData) {
-            Charge::create([
+            Charge::create(array_merge([
                 'organization_id' => $org->id,
-                'title' => $chargeData['title'],
-                'description' => $chargeData['description'],
-                'amount' => $chargeData['amount'],
-                'type' => $chargeData['type'],
                 'image' => null,
-                'status' => 'active',
-            ]);
+            ], $chargeData));
         }
     }
 
@@ -261,23 +308,51 @@ class DatabaseSeeder extends Seeder
             [
                 'title' => 'Welcome to Our Community!',
                 'content' => 'We are excited to have you join our car enthusiast community. Stay tuned for upcoming events and activities!',
-                'scheduled_at' => now()->subDays(30),
+                'approval_status' => 'approved_published',
                 'is_published' => true,
+                'publish_date' => now()->subDays(30),
                 'published_at' => now()->subDays(30),
             ],
             [
-                'title' => 'Monthly Meetup - January 2025',
-                'content' => 'Join us for our monthly meetup at Pavilion KL parking lot. Coffee, conversations, and car showcases! Date: 4th January 2025, Time: 9:00 AM',
-                'scheduled_at' => now()->subDays(15),
+                'title' => 'Monthly Meetup - January 2026',
+                'content' => 'Join us for our monthly meetup at Pavilion KL parking lot. Coffee, conversations, and car showcases! Date: 4th January 2026, Time: 9:00 AM',
+                'approval_status' => 'approved_published',
                 'is_published' => true,
+                'publish_date' => now()->subDays(15),
                 'published_at' => now()->subDays(15),
             ],
             [
                 'title' => 'Track Day Event - Sepang Circuit',
-                'content' => 'Gear up for an exciting track day at Sepang International Circuit! Limited slots available. Registration closes on 15th January 2025.',
-                'scheduled_at' => now()->addDays(5),
+                'content' => 'Gear up for an exciting track day at Sepang International Circuit! Limited slots available. Registration closes on 15th January 2026.',
+                'approval_status' => 'approved_pending_publish',
                 'is_published' => false,
+                'publish_date' => now()->addDays(5),
                 'published_at' => null,
+            ],
+            [
+                'title' => 'New Merchandise Available',
+                'content' => 'Check out our latest club merchandise including t-shirts, caps, and stickers!',
+                'approval_status' => 'pending_approval',
+                'is_published' => false,
+                'publish_date' => null,
+                'published_at' => null,
+            ],
+            [
+                'title' => 'Annual General Meeting 2026',
+                'content' => 'Our AGM will be held on 20th February 2026. All members are encouraged to attend.',
+                'approval_status' => 'draft',
+                'is_published' => false,
+                'publish_date' => null,
+                'published_at' => null,
+            ],
+            [
+                'title' => 'Charity Drive Announcement',
+                'content' => 'Join us in our charity drive to support underprivileged communities.',
+                'approval_status' => 'rejected',
+                'is_published' => false,
+                'publish_date' => null,
+                'published_at' => null,
+                'reject_reason' => 'Please provide more details about the charity organization and how funds will be used.',
             ],
         ];
 
@@ -294,27 +369,54 @@ class DatabaseSeeder extends Seeder
         $statuses = ['completed', 'completed', 'completed', 'pending', 'failed'];
 
         foreach ($members as $member) {
-            // Create 2-4 transactions per member
-            $transactionCount = rand(2, 4);
-
-            for ($i = 0; $i < $transactionCount; $i++) {
+            // Create 2-3 old transactions (last 2-3 months)
+            $oldTransactionCount = rand(2, 3);
+            for ($i = 0; $i < $oldTransactionCount; $i++) {
                 $charge = $charges->where('organization_id', $member->organization_id)->random();
                 $status = $statuses[array_rand($statuses)];
                 $type = rand(0, 10) > 8 ? 'refund' : 'payment';
+                $amount = $type === 'refund' ? -$charge->amount : $charge->amount;
+                $platformFee = abs($amount) * 0.05; // 5% platform fee
 
                 Transaction::create([
                     'organization_id' => $member->organization_id,
                     'member_id' => $member->id,
                     'charge_id' => $charge->id,
                     'transaction_number' => 'TXN' . strtoupper(uniqid()),
-                    'amount' => $type === 'refund' ? -$charge->amount : $charge->amount,
+                    'amount' => $amount,
+                    'platform_fee' => $platformFee,
                     'type' => $type,
                     'payment_method' => $paymentMethods[array_rand($paymentMethods)],
                     'status' => $status,
                     'notes' => $type === 'refund' ? 'Refund processed' : null,
                     'synced_to_accounting' => $status === 'completed' ? (rand(0, 1) == 1) : false,
                     'synced_at' => $status === 'completed' && rand(0, 1) == 1 ? now()->subDays(rand(1, 20)) : null,
-                    'created_at' => now()->subDays(rand(1, 60)),
+                    'created_at' => now()->subMonths(rand(2, 3))->subDays(rand(1, 28)),
+                ]);
+            }
+
+            // Create 2-5 transactions THIS MONTH for realistic dashboard data
+            $thisMonthCount = rand(2, 5);
+            for ($i = 0; $i < $thisMonthCount; $i++) {
+                $charge = $charges->where('organization_id', $member->organization_id)->random();
+                $status = 'completed'; // Most current month transactions are completed
+                $type = 'payment';
+                $platformFee = $charge->amount * 0.05; // 5% platform fee
+
+                Transaction::create([
+                    'organization_id' => $member->organization_id,
+                    'member_id' => $member->id,
+                    'charge_id' => $charge->id,
+                    'transaction_number' => 'TXN' . strtoupper(uniqid()),
+                    'amount' => $charge->amount,
+                    'platform_fee' => $platformFee,
+                    'type' => $type,
+                    'payment_method' => $paymentMethods[array_rand($paymentMethods)],
+                    'status' => $status,
+                    'notes' => null,
+                    'synced_to_accounting' => rand(0, 1) == 1,
+                    'synced_at' => rand(0, 1) == 1 ? now()->subDays(rand(1, 5)) : null,
+                    'created_at' => now()->startOfMonth()->addDays(rand(0, now()->day - 1)),
                 ]);
             }
         }
@@ -384,20 +486,55 @@ class DatabaseSeeder extends Seeder
     {
         $organizations = Organization::all();
 
-        foreach ($organizations as $org) {
-            // Create 2-3 settlements per organization
-            for ($i = 0; $i < rand(2, 3); $i++) {
+        foreach ($organizations as $index => $org) {
+            // Create 1-2 old completed settlements
+            for ($i = 0; $i < rand(1, 2); $i++) {
                 $amount = rand(5000, 15000);
-                $status = ['pending', 'completed', 'completed'][rand(0, 2)];
+                $completedDate = now()->subMonths(rand(1, 3));
 
                 Settlement::create([
                     'organization_id' => $org->id,
                     'settlement_number' => 'STL' . strtoupper(uniqid()),
                     'amount' => $amount,
-                    'settlement_date' => now()->subDays(rand(1, 60))->toDateString(),
+                    'settlement_date' => $completedDate->toDateString(),
+                    'scheduled_date' => $completedDate->toDateString(),
+                    'status' => 'completed',
+                    'completed_at' => $completedDate,
+                    'notes' => 'Settlement transferred to bank account',
+                    'created_at' => $completedDate->subDays(5),
+                ]);
+            }
+
+            // Create 1 recent settlement with varied status
+            $statuses = ['completed', 'pending', 'pending', 'processing'];
+            $status = $statuses[$index % count($statuses)];
+            $amount = rand(3000, 12000);
+
+            if ($status === 'completed') {
+                $completedDate = now()->subDays(rand(1, 10));
+                Settlement::create([
+                    'organization_id' => $org->id,
+                    'settlement_number' => 'STL' . strtoupper(uniqid()),
+                    'amount' => $amount,
+                    'settlement_date' => $completedDate->toDateString(),
+                    'scheduled_date' => $completedDate->toDateString(),
+                    'status' => 'completed',
+                    'completed_at' => $completedDate,
+                    'notes' => 'Settlement transferred successfully',
+                    'created_at' => $completedDate->subDays(3),
+                ]);
+            } else {
+                $scheduledDate = now()->addDays(rand(5, 15));
+                Settlement::create([
+                    'organization_id' => $org->id,
+                    'settlement_number' => 'STL' . strtoupper(uniqid()),
+                    'amount' => $amount,
+                    'settlement_date' => null,
+                    'scheduled_date' => $scheduledDate->toDateString(),
                     'status' => $status,
-                    'notes' => $status === 'completed' ? 'Settlement transferred to bank account' : 'Pending approval',
-                    'created_at' => now()->subDays(rand(1, 60)),
+                    'completed_at' => null,
+                    'notes' => 'Awaiting processing',
+                    'created_at' => now()->subDays(rand(1, 5)),
                 ]);
             }
         }

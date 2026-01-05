@@ -43,6 +43,11 @@ class ContactTicket extends Model
         return $this->belongsTo(Member::class);
     }
 
+    public function messages()
+    {
+        return $this->hasMany(TicketMessage::class, 'ticket_id');
+    }
+
     public function scopeOpen($query)
     {
         return $query->where('status', 'open');

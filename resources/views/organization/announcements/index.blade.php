@@ -31,27 +31,24 @@
                        placeholder="Search announcements..."
                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             </div>
-            <select name="status" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <select name="approval_status" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="">All Status</option>
-                <option value="published" {{ request('status') == 'published' ? 'selected' : '' }}>Published</option>
-                <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
+                <option value="draft" {{ request('approval_status') == 'draft' ? 'selected' : '' }}>Draft</option>
+                <option value="pending_approval" {{ request('approval_status') == 'pending_approval' ? 'selected' : '' }}>Pending Approval</option>
+                <option value="approved_pending_publish" {{ request('approval_status') == 'approved_pending_publish' ? 'selected' : '' }}>Approved</option>
+                <option value="approved_published" {{ request('approval_status') == 'approved_published' ? 'selected' : '' }}>Published</option>
+                <option value="rejected" {{ request('approval_status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
             </select>
             <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
                 Apply
             </button>
-            @if(request()->hasAny(['search', 'status']))
+            @if(request()->hasAny(['search', 'approval_status']))
             <a href="{{ route('organization.announcements.index') }}" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 transition">
                 Clear
             </a>
             @endif
         </form>
     </div>
-
-    @if(session('success'))
-    <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-        {{ session('success') }}
-    </div>
-    @endif
 
     <!-- Bulk Actions Bar -->
     <div id="bulkActionsBar" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -106,8 +103,12 @@
                         </td>
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 text-xs font-medium rounded-full
-                                {{ $announcement->is_published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
-                                {{ $announcement->is_published ? 'Published' : 'Draft' }}
+                                @if($announcement->approval_status == 'pending_approval') bg-yellow-100 text-yellow-700
+                                @elseif(in_array($announcement->approval_status, ['approved_pending_publish', 'approved_published'])) bg-green-100 text-green-700
+                                @elseif($announcement->approval_status == 'rejected') bg-red-100 text-red-700
+                                @else bg-gray-100 text-gray-700
+                                @endif">
+                                {{ str_replace('_', ' ', ucwords($announcement->approval_status, '_')) }}
                             </span>
                         </td>
                         <td class="px-4 py-3">

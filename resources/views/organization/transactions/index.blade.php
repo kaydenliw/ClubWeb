@@ -48,83 +48,70 @@
         </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-medium text-gray-500 uppercase">Total Revenue</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-2">RM {{ number_format($stats['total_revenue'], 2) }}</p>
-                    <p class="text-xs text-gray-500 mt-1">Completed payments</p>
-                </div>
-                <div class="bg-gray-100 rounded-lg p-3">
-                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-medium text-gray-500 uppercase">Pending Amount</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-2">RM {{ number_format($stats['pending_amount'], 2) }}</p>
-                    <p class="text-xs text-gray-500 mt-1">Awaiting completion</p>
-                </div>
-                <div class="bg-gray-100 rounded-lg p-3">
-                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-medium text-gray-500 uppercase">Total Transactions</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-2">{{ $stats['total_transactions'] }}</p>
-                    <p class="text-xs text-gray-500 mt-1">All time</p>
-                </div>
-                <div class="bg-gray-100 rounded-lg p-3">
-                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Filters -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
-        <form method="GET" action="{{ route('organization.transactions.index') }}" class="flex flex-wrap items-center gap-3">
-            <div class="flex-1 min-w-[200px]">
-                <input type="text"
-                       name="search"
-                       value="{{ request('search') }}"
-                       placeholder="Search by member..."
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <form method="GET" action="{{ route('organization.transactions.index') }}" class="space-y-3">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="flex-1 min-w-[200px]">
+                    <input type="text"
+                           name="search"
+                           value="{{ request('search') }}"
+                           placeholder="Search by member..."
+                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <select name="charge_id" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Charges/Plans</option>
+                    @foreach($charges as $charge)
+                        <option value="{{ $charge->id }}" {{ request('charge_id') == $charge->id ? 'selected' : '' }}>
+                            {{ $charge->title }}
+                        </option>
+                    @endforeach
+                </select>
+                <select name="recurring" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Recurring</option>
+                    <option value="one-time" {{ request('recurring') == 'one-time' ? 'selected' : '' }}>One-Time</option>
+                    <option value="1" {{ request('recurring') == '1' ? 'selected' : '' }}>Monthly (1 month)</option>
+                    <option value="2" {{ request('recurring') == '2' ? 'selected' : '' }}>Bi-Monthly (2 months)</option>
+                    <option value="3" {{ request('recurring') == '3' ? 'selected' : '' }}>Quarterly (3 months)</option>
+                    <option value="6" {{ request('recurring') == '6' ? 'selected' : '' }}>Semi-Annually (6 months)</option>
+                    <option value="12" {{ request('recurring') == '12' ? 'selected' : '' }}>Annually (12 months)</option>
+                </select>
+                <select name="status" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Status</option>
+                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                    <option value="failed" {{ request('status') == 'failed' ? 'selected' : '' }}>Failed</option>
+                </select>
             </div>
-            <select name="type" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">All Types</option>
-                <option value="payment" {{ request('type') == 'payment' ? 'selected' : '' }}>Payment</option>
-                <option value="refund" {{ request('type') == 'refund' ? 'selected' : '' }}>Refund</option>
-            </select>
-            <select name="status" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">All Status</option>
-                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                <option value="failed" {{ request('status') == 'failed' ? 'selected' : '' }}>Failed</option>
-            </select>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
-                Apply
-            </button>
-            @if(request()->hasAny(['search', 'type', 'status']))
-            <a href="{{ route('organization.transactions.index') }}" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 transition">
-                Clear
-            </a>
-            @endif
+
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <label class="text-xs text-gray-600">Created:</label>
+                    <input type="date" name="created_from" value="{{ request('created_from') }}"
+                           class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <span class="text-xs text-gray-500">to</span>
+                    <input type="date" name="created_to" value="{{ request('created_to') }}"
+                           class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <label class="text-xs text-gray-600">Updated:</label>
+                    <input type="date" name="updated_from" value="{{ request('updated_from') }}"
+                           class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <span class="text-xs text-gray-500">to</span>
+                    <input type="date" name="updated_to" value="{{ request('updated_to') }}"
+                           class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+                    Apply
+                </button>
+                @if(request()->hasAny(['search', 'charge_id', 'recurring', 'status', 'created_from', 'created_to', 'updated_from', 'updated_to']))
+                <a href="{{ route('organization.transactions.index') }}" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 transition">
+                    Clear
+                </a>
+                @endif
+            </div>
         </form>
     </div>
 
@@ -135,10 +122,15 @@
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Member</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Charges/Plan</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Recurring</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Amount</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Platform Fee</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Settlement</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Sync Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Created Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Last Updated</th>
                         <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
                     </tr>
                 </thead>
@@ -157,15 +149,26 @@
                             </div>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="text-sm font-semibold {{ $txn->type == 'payment' ? 'text-green-600' : 'text-red-600' }}">
-                                {{ $txn->type == 'payment' ? '+' : '-' }}RM {{ number_format(abs($txn->amount), 2) }}
+                            <span class="text-sm text-gray-900">{{ $txn->charge ? $txn->charge->title : '-' }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm text-gray-900">
+                                @if($txn->charge)
+                                    @if($txn->charge->is_recurring)
+                                        {{ $txn->charge->recurring_months }} {{ $txn->charge->recurring_months == 1 ? 'month' : 'months' }}
+                                    @else
+                                        One-Time
+                                    @endif
+                                @else
+                                    -
+                                @endif
                             </span>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="px-2 py-1 text-xs font-medium rounded-full
-                                {{ $txn->type == 'payment' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
-                                {{ ucfirst($txn->type) }}
-                            </span>
+                            <span class="text-sm font-semibold text-gray-900">RM {{ number_format($txn->amount, 2) }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm text-gray-900">RM {{ number_format($txn->platform_fee, 2) }}</span>
                         </td>
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 text-xs font-medium rounded-full
@@ -176,7 +179,27 @@
                             </span>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="text-sm text-gray-600">{{ $txn->created_at->format('M d, Y') }}</span>
+                            @if($txn->settlement_id)
+                                <div>
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">Settled</span>
+                                    <p class="text-xs text-gray-500 mt-1">{{ $txn->settlement->completed_at ? $txn->settlement->completed_at->format('d/m/y H:i') : '-' }}</p>
+                                </div>
+                            @else
+                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">Pending</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3">
+                            @if($txn->synced_to_accounting)
+                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">Synced</span>
+                            @else
+                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">Not Synced</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm text-gray-600">{{ $txn->created_at->format('d/m/Y H:i') }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm text-gray-600">{{ $txn->updated_at->format('d/m/Y H:i') }}</span>
                         </td>
                         <td class="px-4 py-3 text-right">
                             <a href="{{ route('organization.transactions.show', $txn) }}"
@@ -187,12 +210,28 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-8 text-center text-sm text-gray-500">
+                        <td colspan="11" class="px-4 py-8 text-center text-sm text-gray-500">
                             No transactions found.
                         </td>
                     </tr>
                     @endforelse
                 </tbody>
+
+                <!-- TOTAL Row in tfoot -->
+                @if($transactions->count() > 0)
+                <tfoot class="bg-blue-50 font-semibold border-t-2 border-gray-300">
+                    <tr>
+                        <td colspan="3" class="px-4 py-3 text-right text-sm text-gray-900">TOTAL:</td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm font-bold text-gray-900">RM {{ number_format($totals->total_amount ?? 0, 2) }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm font-bold text-gray-900">RM {{ number_format($totals->total_platform_fee ?? 0, 2) }}</span>
+                        </td>
+                        <td colspan="6"></td>
+                    </tr>
+                </tfoot>
+                @endif
             </table>
         </div>
     </div>
@@ -204,10 +243,7 @@
 $(document).ready(function() {
     $('#transactionsTable').DataTable({
         "pageLength": 15,
-        "order": [[4, "desc"]],
-        "columnDefs": [
-            { "orderable": false, "targets": 5 }
-        ],
+        "order": [[8, "desc"]],
         "language": {
             "paginate": {
                 "previous": "← Previous",

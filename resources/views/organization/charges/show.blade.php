@@ -25,24 +25,35 @@
     <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
         <div class="flex items-start justify-between mb-6">
             <div class="flex items-start space-x-4">
-                @if($charge->image_path)
-                <img src="{{ asset('storage/' . $charge->image_path) }}"
-                     alt="{{ $charge->name }}"
+                @if($charge->image)
+                <img src="{{ asset('storage/' . $charge->image) }}"
+                     alt="{{ $charge->title }}"
                      class="w-20 h-20 rounded-lg object-cover border border-gray-200">
                 @else
                 <div class="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <span class="text-xl font-bold text-gray-600">{{ strtoupper(substr($charge->name, 0, 2)) }}</span>
+                    <span class="text-xl font-bold text-gray-600">{{ strtoupper(substr($charge->title, 0, 2)) }}</span>
                 </div>
                 @endif
                 <div>
-                    <h3 class="text-xl font-semibold text-gray-900">{{ $charge->name }}</h3>
-                    <p class="text-sm text-gray-500 mt-1">{{ $charge->description }}</p>
+                    <h3 class="text-xl font-semibold text-gray-900">{{ $charge->title }}</h3>
+                    <div class="text-sm text-gray-500 mt-1">{!! $charge->description !!}</div>
                     <div class="flex items-center space-x-3 mt-3">
                         <span class="px-2 py-1 text-xs font-medium rounded-full
-                            {{ $charge->type == 'monthly' ? 'bg-blue-100 text-blue-700' : '' }}
-                            {{ $charge->type == 'yearly' ? 'bg-purple-100 text-purple-700' : '' }}
-                            {{ $charge->type == 'one-time' ? 'bg-green-100 text-green-700' : '' }}">
-                            {{ ucfirst($charge->type) }}
+                            {{ $charge->is_recurring ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
+                            @if($charge->is_recurring)
+                                Recurring ({{ $charge->recurring_months }} {{ $charge->recurring_months == 1 ? 'month' : 'months' }})
+                            @else
+                                One-Time
+                            @endif
+                        </span>
+                        <span class="px-2 py-1 text-xs font-medium rounded-full
+                            @if($charge->approval_status == 'draft') bg-gray-100 text-gray-700
+                            @elseif($charge->approval_status == 'pending') bg-yellow-100 text-yellow-700
+                            @elseif($charge->approval_status == 'approved') bg-green-100 text-green-700
+                            @elseif($charge->approval_status == 'rejected') bg-red-100 text-red-700
+                            @else bg-gray-100 text-gray-700
+                            @endif">
+                            {{ ucfirst($charge->approval_status) }}
                         </span>
                         <span class="px-2 py-1 text-xs font-medium rounded-full
                             {{ $charge->status == 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
@@ -57,82 +68,112 @@
             </div>
         </div>
 
+        <!-- Rejection Notice -->
+        @if($charge->approval_status == 'rejected' && $charge->reject_reason)
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div class="flex items-start">
+                <svg class="w-5 h-5 text-red-600 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>
+                <div class="flex-1">
+                    <h4 class="text-sm font-semibold text-red-800 mb-1">Charge Rejected</h4>
+                    <p class="text-sm text-red-700">{{ $charge->reject_reason }}</p>
+                    <p class="text-xs text-red-600 mt-2">Please make the necessary changes and resubmit for approval.</p>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <div class="flex items-center space-x-3 pt-6 border-t border-gray-200">
+            @if($charge->approval_status == 'pending')
+                <div class="px-4 py-2 bg-yellow-50 text-yellow-700 text-sm font-medium rounded-lg border border-yellow-200">
+                    Pending Approval
+                </div>
+            @elseif($charge->approval_status == 'rejected')
+                <form method="POST" action="{{ route('organization.charges.submit', $charge) }}">
+                    @csrf
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
+                        Resubmit for Approval
+                    </button>
+                </form>
+            @elseif($charge->approval_status == 'draft')
+                <form method="POST" action="{{ route('organization.charges.submit', $charge) }}">
+                    @csrf
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
+                        Submit for Approval
+                    </button>
+                </form>
+            @endif
+
+            @if($charge->approval_status != 'pending')
             <a href="{{ route('organization.charges.edit', $charge) }}"
-               class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+               class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
                 Edit Charge
             </a>
+            @endif
+
             <form id="delete-charge-{{ $charge->id }}" method="POST" action="{{ route('organization.charges.destroy', $charge) }}" style="display: none;">
                 @csrf
                 @method('DELETE')
             </form>
             <button type="button"
-                    onclick="return confirmDelete('delete-charge-{{ $charge->id }}', '{{ addslashes($charge->name) }}')"
-                    class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition">
+                    onclick="return confirmDelete('delete-charge-{{ $charge->id }}', '{{ addslashes($charge->title) }}')"
+                    class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
                 Delete Charge
             </button>
         </div>
     </div>
 
-    <!-- Members with this Charge -->
+    <!-- Mobile App Preview -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Members ({{ $charge->members->count() }})</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Mobile App Preview</h3>
 
-        @if($members->count() > 0)
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Member</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Amount</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Paid At</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    @foreach($members as $member)
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="px-4 py-3">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                    <span class="text-xs font-bold text-white">{{ strtoupper(substr($member->name, 0, 2)) }}</span>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">{{ $member->name }}</p>
-                                    <p class="text-xs text-gray-500">{{ $member->email }}</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-4 py-3">
-                            <span class="text-sm font-semibold text-gray-900">RM {{ number_format($member->pivot->amount, 2) }}</span>
-                        </td>
-                        <td class="px-4 py-3">
-                            <span class="px-2 py-1 text-xs font-medium rounded-full
-                                {{ $member->pivot->status == 'paid' ? 'bg-green-100 text-green-700' : '' }}
-                                {{ $member->pivot->status == 'pending' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                {{ $member->pivot->status == 'overdue' ? 'bg-red-100 text-red-700' : '' }}">
-                                {{ ucfirst($member->pivot->status) }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3">
-                            <span class="text-sm text-gray-600">
-                                {{ $member->pivot->paid_at ? \Carbon\Carbon::parse($member->pivot->paid_at)->format('M d, Y') : '-' }}
-                            </span>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+        <div class="flex justify-center">
+            <div class="w-80 bg-gray-100 rounded-3xl p-4 shadow-xl">
+                <!-- Phone Frame -->
+                <div class="bg-white rounded-2xl overflow-hidden shadow-lg">
+                    <!-- Status Bar -->
+                    <div class="bg-gray-900 px-6 py-2 flex justify-between items-center text-white text-xs">
+                        <span>9:41</span>
+                        <div class="flex space-x-1">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path></svg>
+                        </div>
+                    </div>
 
-        @if($members->hasPages())
-        <div class="mt-4">
-            {{ $members->links() }}
+                    <!-- App Content -->
+                    <div class="p-4 space-y-4" style="height: 600px; overflow-y: auto;">
+                        <!-- Charge Card -->
+                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white">
+                            @if($charge->image)
+                            <img src="{{ asset('storage/' . $charge->image) }}"
+                                 alt="{{ $charge->title }}"
+                                 class="w-full h-32 object-cover rounded-lg mb-3">
+                            @endif
+                            <h4 class="font-bold text-lg mb-1">{{ $charge->title }}</h4>
+                            <p class="text-2xl font-bold">RM {{ number_format($charge->amount, 2) }}</p>
+                            <p class="text-xs mt-2 opacity-90">
+                                @if($charge->is_recurring)
+                                    Recurring every {{ $charge->recurring_months }} {{ $charge->recurring_months == 1 ? 'month' : 'months' }}
+                                @else
+                                    One-time payment
+                                @endif
+                            </p>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-xs font-semibold text-gray-700 mb-2">Description</p>
+                            <div class="text-xs text-gray-600">{!! $charge->description !!}</div>
+                        </div>
+
+                        <!-- Pay Button -->
+                        <button class="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg">
+                            Pay Now
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-        @endif
-        @else
-        <p class="text-sm text-gray-500 text-center py-8">No members assigned to this charge yet.</p>
-        @endif
     </div>
 </div>
 @endsection

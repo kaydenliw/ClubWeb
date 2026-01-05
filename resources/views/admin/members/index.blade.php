@@ -47,12 +47,6 @@
         </div>
     </div>
 
-    @if(session('success'))
-        <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-            {{ session('success') }}
-        </div>
-    @endif
-
     <!-- Filters -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
         <form method="GET" class="flex flex-wrap items-center gap-3">
@@ -94,10 +88,10 @@
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Member</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Organization</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Contact</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Car Details</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Total Clubs</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Status</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Payment Status</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Sync Status</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Joined</th>
                         <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
@@ -118,19 +112,32 @@
                             </div>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="text-sm text-gray-900">{{ $member->organization->name }}</span>
-                        </td>
-                        <td class="px-4 py-3">
                             <div class="text-sm text-gray-900">{{ $member->email }}</div>
                             <div class="text-xs text-gray-500">{{ $member->phone ?? '-' }}</div>
                         </td>
-                        <td class="px-4 py-3">
-                            <div class="text-sm text-gray-900">{{ $member->car_brand ?? '-' }} {{ $member->car_model ?? '' }}</div>
-                            <div class="text-xs text-gray-500">{{ $member->car_plate ?? '-' }}</div>
+                        <td class="px-4 py-3 text-center">
+                            @if($member->organizations->count() > 0)
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                                    {{ $member->organizations->count() }} {{ $member->organizations->count() == 1 ? 'Club' : 'Clubs' }}
+                                </span>
+                            @else
+                                <span class="text-xs text-gray-400">No clubs</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-center">
                             <span class="px-2 py-1 text-xs font-medium rounded-full {{ $member->status == 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
                                 {{ ucfirst($member->status) }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            @php
+                                $paymentStatus = $member->payment_status;
+                            @endphp
+                            <span class="px-2 py-1 text-xs font-medium rounded-full
+                                {{ $paymentStatus['color'] == 'red' ? 'bg-red-100 text-red-700' : '' }}
+                                {{ $paymentStatus['color'] == 'yellow' ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                {{ $paymentStatus['color'] == 'green' ? 'bg-green-100 text-green-700' : '' }}">
+                                {{ $paymentStatus['label'] }}
                             </span>
                         </td>
                         <td class="px-4 py-3 text-center">

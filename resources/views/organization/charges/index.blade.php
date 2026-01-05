@@ -1,19 +1,19 @@
 @extends('layouts.dashboard')
 
 @section('title', 'Charges Management')
-@section('page-title', 'Charges & Donations')
+@section('page-title', 'Charges & Plans')
 
 @section('content')
 @include('layouts.partials.breadcrumb', ['items' => [
     ['label' => 'Dashboard', 'url' => route('organization.dashboard')],
-    ['label' => 'Charges', 'url' => null]
+    ['label' => 'Charges & Plans', 'url' => null]
 ]])
 <div class="space-y-4">
     <!-- Header with Actions -->
     <div class="flex justify-between items-center">
         <div>
-            <h3 class="text-lg font-semibold text-gray-900">Manage Charges</h3>
-            <p class="text-sm text-gray-500 mt-1">Create and manage membership fees and donations</p>
+            <h3 class="text-lg font-semibold text-gray-900">Manage Charges & Plans</h3>
+            <p class="text-sm text-gray-500 mt-1">Create and manage membership charges and plans</p>
         </div>
         <a href="{{ route('organization.charges.create') }}"
            class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
@@ -53,12 +53,6 @@
         </form>
     </div>
 
-    @if(session('success'))
-    <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-        {{ session('success') }}
-    </div>
-    @endif
-
     <!-- Bulk Actions Bar -->
     <div id="bulkActionsBar" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div class="flex items-center justify-between">
@@ -91,11 +85,11 @@
                         <th class="px-4 py-3 text-left">
                             <input type="checkbox" id="selectAll" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                         </th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Charge</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Title</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Amount</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Charges Every</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Members</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Last Modified</th>
                         <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
                     </tr>
                 </thead>
@@ -107,19 +101,20 @@
                         </td>
                         <td class="px-4 py-3">
                             <div>
-                                <p class="text-sm font-medium text-gray-900">{{ $charge->name }}</p>
-                                <p class="text-xs text-gray-500">{{ Str::limit($charge->description, 50) }}</p>
+                                <p class="text-sm font-medium text-gray-900">{{ $charge->title }}</p>
+                                <p class="text-xs text-gray-500">{{ Str::limit(strip_tags($charge->description), 50) }}</p>
                             </div>
                         </td>
                         <td class="px-4 py-3">
                             <span class="text-sm font-semibold text-gray-900">RM {{ number_format($charge->amount, 2) }}</span>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="px-2 py-1 text-xs font-medium rounded-full
-                                {{ $charge->type == 'monthly' ? 'bg-blue-100 text-blue-700' : '' }}
-                                {{ $charge->type == 'yearly' ? 'bg-purple-100 text-purple-700' : '' }}
-                                {{ $charge->type == 'one-time' ? 'bg-green-100 text-green-700' : '' }}">
-                                {{ ucfirst($charge->type) }}
+                            <span class="text-sm text-gray-900">
+                                @if($charge->recurring_frequency === 'one-time')
+                                    One-Time
+                                @else
+                                    {{ ucwords(str_replace('-', ' ', $charge->recurring_frequency)) }}
+                                @endif
                             </span>
                         </td>
                         <td class="px-4 py-3">
@@ -129,7 +124,7 @@
                             </span>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="text-sm text-gray-600">{{ $charge->members_count }}</span>
+                            <span class="text-sm text-gray-600">{{ $charge->updated_at->format('d M Y, h:i A') }}</span>
                         </td>
                         <td class="px-4 py-3 text-right">
                             <div class="relative" x-data="{ open: false }">
@@ -169,7 +164,7 @@
                                         @method('DELETE')
                                     </form>
                                     <button type="button"
-                                            onclick="return confirmDelete('delete-charge-{{ $charge->id }}', '{{ addslashes($charge->name) }}')"
+                                            onclick="return confirmDelete('delete-charge-{{ $charge->id }}', '{{ addslashes($charge->title) }}')"
                                             class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">
                                         <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>

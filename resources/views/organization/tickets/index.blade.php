@@ -126,12 +126,6 @@
         </form>
     </div>
 
-    @if(session('success'))
-    <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-        {{ session('success') }}
-    </div>
-    @endif
-
     <!-- Tickets List -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
@@ -217,6 +211,16 @@ $(document).ready(function() {
     $('#ticketsTable').DataTable({
         "pageLength": 15,
         "order": [[6, "desc"]],
+        "columns": [
+            null, // Ticket #
+            null, // Member
+            null, // Subject
+            null, // Priority
+            null, // Category
+            null, // Status
+            null, // Created
+            null  // Actions
+        ],
         "columnDefs": [
             { "orderable": false, "targets": 7 }
         ],

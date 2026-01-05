@@ -61,41 +61,165 @@
                 </div>
             </div>
 
+        </div>
+
+        <!-- Membership Details Section -->
+        <div class="px-6 py-4 border-b border-t border-gray-100">
+            <h3 class="text-base font-semibold text-gray-900">Membership Details</h3>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Role</label>
+                    <input type="text" name="role" value="{{ old('role', 'member') }}" placeholder="e.g., Member, Volunteer"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Membership Number</label>
+                    <input type="text" name="membership_number" value="{{ old('membership_number') }}" placeholder="e.g., VCC-1234"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Joined Date</label>
+                    <input type="date" name="joined_at" value="{{ old('joined_at', date('Y-m-d')) }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+            </div>
+
             <div class="mt-6">
-                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Address</label>
-                <textarea name="address" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ old('address') }}</textarea>
-                @error('address')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Notes</label>
+                <textarea name="notes" rows="3" placeholder="Additional notes about this membership..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ old('notes') }}</textarea>
             </div>
         </div>
 
-        <!-- Car Details Section -->
-        <div class="px-6 py-4 border-b border-t border-gray-200">
-            <h3 class="text-base font-semibold text-gray-900">Car Details</h3>
+
+        <!-- Type-Specific Details Section -->
+        @if($organization && $organization->organizationType)
+        <div class="px-6 py-4 border-b border-t border-gray-100">
+            <h3 class="text-base font-semibold text-gray-900">
+                @if($organization->organizationType->slug === 'car_club')
+                    🚗 Vehicle Details
+                @elseif($organization->organizationType->slug === 'residential_club')
+                    🏠 Residential Details
+                @elseif($organization->organizationType->slug === 'sports_club')
+                    ⚽ Sports Club Details
+                @else
+                    Additional Details
+                @endif
+            </h3>
+            <p class="text-xs text-gray-500 mt-1">Optional information specific to this organization type</p>
         </div>
         <div class="p-6">
+            @if($organization->organizationType->slug === 'car_club')
+            <!-- Car Club Fields -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Car Brand</label>
-                    <input type="text" name="car_brand" value="{{ old('car_brand') }}"
+                    <input type="text" name="car_brand" value="{{ old('car_brand') }}" placeholder="e.g., Honda"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    @error('car_brand')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
-
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Car Model</label>
-                    <input type="text" name="car_model" value="{{ old('car_model') }}"
+                    <input type="text" name="car_model" value="{{ old('car_model') }}" placeholder="e.g., Civic"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    @error('car_model')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
-
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Car Plate</label>
-                    <input type="text" name="car_plate" value="{{ old('car_plate') }}"
+                    <input type="text" name="car_plate" value="{{ old('car_plate') }}" placeholder="e.g., ABC 1234"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    @error('car_plate')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Car Color</label>
+                    <input type="text" name="car_color" value="{{ old('car_color') }}" placeholder="e.g., Red"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Car Year</label>
+                    <input type="number" name="car_year" value="{{ old('car_year') }}" placeholder="e.g., 2020" min="1900" max="2099"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
             </div>
+            @elseif($organization->organizationType->slug === 'residential_club')
+            <!-- Residential Club Fields -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Unit Number</label>
+                    <input type="text" name="unit_number" value="{{ old('unit_number') }}" placeholder="e.g., A-12-05"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Block</label>
+                    <input type="text" name="block" value="{{ old('block') }}" placeholder="e.g., Block A"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Floor</label>
+                    <input type="text" name="floor" value="{{ old('floor') }}" placeholder="e.g., 12"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Address</label>
+                    <input type="text" name="address_line_1" value="{{ old('address_line_1') }}" placeholder="Address Line 1"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Postcode</label>
+                    <input type="text" name="postcode" value="{{ old('postcode') }}" placeholder="e.g., 50450"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">City</label>
+                    <input type="text" name="city" value="{{ old('city') }}" placeholder="e.g., Kuala Lumpur"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">State</label>
+                    <input type="text" name="state" value="{{ old('state') }}" placeholder="e.g., Wilayah Persekutuan"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+            </div>
+            @elseif($organization->organizationType->slug === 'sports_club')
+            <!-- Sports Club Fields -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Emergency Contact Name</label>
+                    <input type="text" name="emergency_contact_name" value="{{ old('emergency_contact_name') }}" placeholder="e.g., John Doe"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Emergency Contact Phone</label>
+                    <input type="text" name="emergency_contact_phone" value="{{ old('emergency_contact_phone') }}" placeholder="e.g., +60123456789"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Blood Type</label>
+                    <select name="blood_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Select Blood Type</option>
+                        <option value="A+" {{ old('blood_type') == 'A+' ? 'selected' : '' }}>A+</option>
+                        <option value="A-" {{ old('blood_type') == 'A-' ? 'selected' : '' }}>A-</option>
+                        <option value="B+" {{ old('blood_type') == 'B+' ? 'selected' : '' }}>B+</option>
+                        <option value="B-" {{ old('blood_type') == 'B-' ? 'selected' : '' }}>B-</option>
+                        <option value="AB+" {{ old('blood_type') == 'AB+' ? 'selected' : '' }}>AB+</option>
+                        <option value="AB-" {{ old('blood_type') == 'AB-' ? 'selected' : '' }}>AB-</option>
+                        <option value="O+" {{ old('blood_type') == 'O+' ? 'selected' : '' }}>O+</option>
+                        <option value="O-" {{ old('blood_type') == 'O-' ? 'selected' : '' }}>O-</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Preferred Sports</label>
+                    <input type="text" name="preferred_sports" value="{{ old('preferred_sports') }}" placeholder="e.g., Football, Basketball"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Medical Conditions</label>
+                    <textarea name="medical_conditions" rows="2" placeholder="Any medical conditions or allergies..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ old('medical_conditions') }}</textarea>
+                </div>
+            </div>
+            @endif
         </div>
+        @endif
 
         <!-- Form Actions -->
         <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">

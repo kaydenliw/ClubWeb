@@ -17,8 +17,12 @@
                 <div class="flex items-center gap-3 mb-2">
                     <h2 class="text-2xl font-bold text-gray-900">{{ $announcement->title }}</h2>
                     <span class="px-2 py-1 text-xs font-medium rounded-full
-                        {{ $announcement->is_published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
-                        {{ $announcement->is_published ? 'Published' : 'Draft' }}
+                        @if($announcement->approval_status == 'pending_approval') bg-yellow-100 text-yellow-700
+                        @elseif(in_array($announcement->approval_status, ['approved_pending_publish', 'approved_published'])) bg-green-100 text-green-700
+                        @elseif($announcement->approval_status == 'rejected') bg-red-100 text-red-700
+                        @else bg-gray-100 text-gray-700
+                        @endif">
+                        {{ ucwords(str_replace('_', ' ', $announcement->approval_status)) }}
                     </span>
                 </div>
                 <div class="flex items-center gap-4 text-sm text-gray-500">
@@ -29,10 +33,32 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
+                @if($announcement->approval_status == 'pending_approval')
+                    <div class="px-4 py-2 bg-yellow-50 text-yellow-700 text-sm font-medium rounded-lg border border-yellow-200">
+                        Pending Approval
+                    </div>
+                @elseif($announcement->approval_status == 'rejected')
+                    <form method="POST" action="{{ route('organization.announcements.submit', $announcement) }}">
+                        @csrf
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
+                            Resubmit for Approval
+                        </button>
+                    </form>
+                @elseif($announcement->approval_status == 'draft')
+                    <form method="POST" action="{{ route('organization.announcements.submit', $announcement) }}">
+                        @csrf
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
+                            Submit for Approval
+                        </button>
+                    </form>
+                @endif
+
+                @if($announcement->approval_status != 'pending_approval')
                 <a href="{{ route('organization.announcements.edit', $announcement) }}"
                    class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
                     Edit
                 </a>
+                @endif
                 <a href="{{ route('organization.announcements.index') }}"
                    class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition">
                     Back
@@ -40,6 +66,22 @@
             </div>
         </div>
     </div>
+
+    <!-- Rejection Notice -->
+    @if($announcement->approval_status == 'rejected' && $announcement->reject_reason)
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-start">
+            <svg class="w-5 h-5 text-red-600 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+            <div class="flex-1">
+                <h4 class="text-sm font-semibold text-red-800 mb-1">Announcement Rejected</h4>
+                <p class="text-sm text-red-700">{{ $announcement->reject_reason }}</p>
+                <p class="text-xs text-red-600 mt-2">Please make the necessary changes and resubmit for approval.</p>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <!-- Content Card -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">

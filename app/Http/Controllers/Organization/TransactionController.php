@@ -18,7 +18,7 @@ class TransactionController extends Controller
     {
         $orgId = auth()->user()->organization_id;
 
-        $query = Transaction::with('member')
+        $query = Transaction::with(['member', 'charge', 'settlement'])
             ->where('organization_id', $orgId);
 
         // Search filter
@@ -39,29 +39,53 @@ class TransactionController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Date range filter
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
+        // Creation date range filter
+        if ($request->filled('created_from')) {
+            $query->whereDate('created_at', '>=', $request->created_from);
         }
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
+        if ($request->filled('created_to')) {
+            $query->whereDate('created_at', '<=', $request->created_to);
         }
 
-        $transactions = $query->latest()->paginate(15)->withQueryString();
+        // Last updated date range filter
+        if ($request->filled('updated_from')) {
+            $query->whereDate('updated_at', '>=', $request->updated_from);
+        }
+        if ($request->filled('updated_to')) {
+            $query->whereDate('updated_at', '<=', $request->updated_to);
+        }
 
-        // Calculate stats
-        $stats = [
-            'total_revenue' => Transaction::where('organization_id', $orgId)
-                ->where('status', 'completed')
-                ->where('type', 'payment')
-                ->sum('amount'),
-            'pending_amount' => Transaction::where('organization_id', $orgId)
-                ->where('status', 'pending')
-                ->sum('amount'),
-            'total_transactions' => Transaction::where('organization_id', $orgId)->count(),
-        ];
+        // Recurring filter
+        if ($request->filled('recurring')) {
+            if ($request->recurring === 'one-time') {
+                $query->whereHas('charge', function($q) {
+                    $q->where('is_recurring', false);
+                });
+            } else {
+                $query->whereHas('charge', function($q) use ($request) {
+                    $q->where('is_recurring', true)
+                      ->where('recurring_months', $request->recurring);
+                });
+            }
+        }
 
-        return view('organization.transactions.index', compact('transactions', 'stats'));
+        // Charge/Plan filter
+        if ($request->filled('charge_id')) {
+            $query->where('charge_id', $request->charge_id);
+        }
+
+        $transactions = $query->latest()->get();
+
+        // Calculate totals for current filtered results
+        $totals = $query->selectRaw('SUM(amount) as total_amount, SUM(platform_fee) as total_platform_fee')
+            ->first();
+
+        // Get all charges for filter dropdown
+        $charges = \App\Models\Charge::where('organization_id', $orgId)
+            ->orderBy('title')
+            ->get();
+
+        return view('organization.transactions.index', compact('transactions', 'totals', 'charges'));
     }
 
     public function show(Transaction $transaction)

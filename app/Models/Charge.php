@@ -16,12 +16,22 @@ class Charge extends Model
         'description',
         'amount',
         'type',
+        'recurring_frequency',
+        'is_recurring',
+        'recurring_months',
         'image',
         'status',
+        'platform_fee_percentage',
+        'platform_fee_operator',
+        'platform_fee_fixed',
+        'approval_status',
+        'reject_reason',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'is_recurring' => 'boolean',
+        'scheduled_at' => 'datetime',
     ];
 
     public function organization()
@@ -37,7 +47,7 @@ class Charge extends Model
     public function members()
     {
         return $this->belongsToMany(Member::class, 'charge_member')
-            ->withPivot('amount', 'status', 'paid_at')
+            ->withPivot('amount', 'status', 'paid_at', 'next_renewal_date')
             ->withTimestamps();
     }
 }

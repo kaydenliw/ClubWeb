@@ -19,12 +19,8 @@ class AnnouncementController extends Controller
             });
         }
 
-        if ($request->filled('status')) {
-            if ($request->status === 'published') {
-                $query->where('is_published', true);
-            } elseif ($request->status === 'draft') {
-                $query->where('is_published', false);
-            }
+        if ($request->filled('approval_status')) {
+            $query->where('approval_status', $request->approval_status);
         }
 
         $announcements = $query->latest()->get();
@@ -42,15 +38,13 @@ class AnnouncementController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'scheduled_at' => 'nullable|date',
-            'is_published' => 'boolean',
+            'publish_date' => 'nullable|date',
+            'approval_status' => 'nullable|in:draft,pending_approval',
         ]);
 
         $validated['organization_id'] = auth()->user()->organization_id;
-
-        if ($request->is_published) {
-            $validated['published_at'] = now();
-        }
+        $validated['created_by'] = auth()->id();
+        $validated['approval_status'] = $validated['approval_status'] ?? 'draft';
 
         Announcement::create($validated);
 
@@ -85,13 +79,9 @@ class AnnouncementController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'scheduled_at' => 'nullable|date',
-            'is_published' => 'boolean',
+            'publish_date' => 'nullable|date',
+            'approval_status' => 'nullable|in:draft,pending_approval',
         ]);
-
-        if ($request->is_published && !$announcement->is_published) {
-            $validated['published_at'] = now();
-        }
 
         $announcement->update($validated);
 
@@ -135,27 +125,30 @@ class AnnouncementController extends Controller
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:announcements,id',
-            'status' => 'required|in:published,draft'
+            'approval_status' => 'required|in:draft,pending_approval'
         ]);
 
         $orgId = auth()->user()->organization_id;
 
-        $isPublished = $request->status === 'published';
-
-        $announcements = Announcement::whereIn('id', $request->ids)
+        $updated = Announcement::whereIn('id', $request->ids)
             ->where('organization_id', $orgId)
-            ->get();
-
-        foreach ($announcements as $announcement) {
-            $announcement->update([
-                'is_published' => $isPublished,
-                'published_at' => $isPublished ? ($announcement->published_at ?? now()) : null
-            ]);
-        }
+            ->update(['approval_status' => $request->approval_status]);
 
         return response()->json([
             'success' => true,
-            'message' => count($announcements) . ' announcement(s) updated successfully.'
+            'message' => $updated . ' announcement(s) updated successfully.'
         ]);
+    }
+
+    public function submitForApproval(Announcement $announcement)
+    {
+        if ($announcement->organization_id !== auth()->user()->organization_id) {
+            abort(403);
+        }
+
+        $announcement->update(['approval_status' => 'pending_approval']);
+
+        return redirect()->route('organization.announcements.show', $announcement)
+            ->with('success', 'Announcement submitted for approval.');
     }
 }

@@ -50,12 +50,6 @@
         </form>
     </div>
 
-    @if(session('success'))
-    <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-        {{ session('success') }}
-    </div>
-    @endif
-
     <!-- Bulk Actions Bar -->
     <div id="bulkActionsBar" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div class="flex items-center justify-between">

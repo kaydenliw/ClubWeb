@@ -14,7 +14,19 @@ class OrganizationController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Organization::withCount(['members', 'transactions', 'charges']);
+        $query = Organization::withCount(['members', 'charges'])
+            ->with(['transactions' => function($q) {
+                $q->where('status', 'completed')
+                  ->where('type', 'payment')
+                  ->whereMonth('created_at', now()->month)
+                  ->whereYear('created_at', now()->year);
+            }])
+            ->with(['settlements' => function($q) {
+                $q->latest()->limit(1);
+            }])
+            ->with(['announcements' => function($q) {
+                $q->latest()->limit(1);
+            }]);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -42,21 +54,27 @@ class OrganizationController extends Controller
 
     public function create()
     {
-        return view('admin.organizations.create');
+        $organizationTypes = \App\Models\OrganizationType::all();
+        return view('admin.organizations.create', compact('organizationTypes'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'organization_type_id' => 'required|exists:organization_types,id',
             'email' => 'required|email|unique:organizations,email',
             'phone' => 'nullable|string|max:20',
+            'pic_name' => 'nullable|string|max:255',
             'address' => 'nullable|string',
             'logo' => 'nullable|image|max:2048',
             'bank_name' => 'nullable|string|max:255',
             'bank_account_number' => 'nullable|string|max:50',
             'bank_account_holder' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive',
+            'platform_fee_percentage' => 'nullable|numeric|min:0|max:100',
+            'platform_fee_operator' => 'nullable|in:and,or',
+            'platform_fee_fixed' => 'nullable|numeric|min:0',
         ]);
 
         if ($request->hasFile('logo')) {
@@ -87,12 +105,16 @@ class OrganizationController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:organizations,email,' . $organization->id,
             'phone' => 'nullable|string|max:20',
+            'pic_name' => 'nullable|string|max:255',
             'address' => 'nullable|string',
             'logo' => 'nullable|image|max:2048',
             'bank_name' => 'nullable|string|max:255',
             'bank_account_number' => 'nullable|string|max:50',
             'bank_account_holder' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive',
+            'platform_fee_percentage' => 'nullable|numeric|min:0|max:100',
+            'platform_fee_operator' => 'nullable|in:and,or',
+            'platform_fee_fixed' => 'nullable|numeric|min:0',
         ]);
 
         if ($request->hasFile('logo')) {
@@ -135,5 +157,43 @@ class OrganizationController extends Controller
         $organizations = Organization::withCount('members')->get();
         $pdf = Pdf::loadView('admin.organizations.pdf', compact('organizations'));
         return $pdf->download('admin_organizations_' . date('Y-m-d_His') . '.pdf');
+    }
+
+    public function pendingBankDetails()
+    {
+        $organizations = Organization::where('bank_details_status', 'pending')
+            ->latest('updated_at')
+            ->get();
+
+        $pendingCount = $organizations->count();
+
+        return view('admin.bank-details.index', compact('organizations', 'pendingCount'));
+    }
+
+    public function approveBankDetails(Organization $organization)
+    {
+        $organization->update([
+            'bank_name' => $organization->pending_bank_name,
+            'bank_account_holder' => $organization->pending_bank_account_holder,
+            'bank_account_number' => $organization->pending_bank_account_number,
+            'bank_details_status' => 'approved',
+            'pending_bank_name' => null,
+            'pending_bank_account_holder' => null,
+            'pending_bank_account_number' => null,
+        ]);
+
+        return redirect()->back()->with('success', 'Bank details approved successfully.');
+    }
+
+    public function rejectBankDetails(Request $request, Organization $organization)
+    {
+        $organization->update([
+            'bank_details_status' => 'rejected',
+            'pending_bank_name' => null,
+            'pending_bank_account_holder' => null,
+            'pending_bank_account_number' => null,
+        ]);
+
+        return redirect()->back()->with('success', 'Bank details rejected.');
     }
 }

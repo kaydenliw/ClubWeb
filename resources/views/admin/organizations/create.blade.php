@@ -36,14 +36,26 @@
                 </div>
 
                 <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Organization Type *</label>
+                    <select name="organization_type_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('organization_type_id') border-red-500 @enderror">
+                        <option value="">Select Type</option>
+                        @foreach($organizationTypes as $type)
+                        <option value="{{ $type->id }}" {{ old('organization_type_id') == $type->id ? 'selected' : '' }}>
+                            {{ $type->icon }} {{ $type->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                    @error('organization_type_id')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Email *</label>
                     <input type="email" name="email" value="{{ old('email') }}" required
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('email') border-red-500 @enderror">
                     @error('email')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Phone</label>
                     <input type="text" name="phone" value="{{ old('phone') }}"
@@ -51,6 +63,15 @@
                     @error('phone')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
 
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">PIC Name</label>
+                    <input type="text" name="pic_name" value="{{ old('pic_name') }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('pic_name') border-red-500 @enderror">
+                    @error('pic_name')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Status *</label>
                     <select name="status" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('status') border-red-500 @enderror">
@@ -69,7 +90,20 @@
 
             <div class="mt-6">
                 <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Logo</label>
-                <input type="file" name="logo" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('logo') border-red-500 @enderror">
+                <div class="relative">
+                    <input type="file" name="logo" id="logo" accept="image/*" class="hidden" onchange="updateLogoFileName(this)">
+                    <label for="logo" class="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition @error('logo') border-red-500 @enderror">
+                        <div class="text-center">
+                            <svg class="mx-auto h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <p class="mt-1 text-sm text-gray-600">
+                                <span class="font-medium text-blue-600">Click to upload</span> or drag and drop
+                            </p>
+                            <p class="text-xs text-gray-500" id="logo-file-name">PNG, JPG, GIF up to 2MB</p>
+                        </div>
+                    </label>
+                </div>
                 @error('logo')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
             </div>
         </div>
@@ -103,6 +137,40 @@
             </div>
         </div>
 
+        <!-- Platform Fee Configuration Section -->
+        <div class="px-6 py-4 border-b border-t border-gray-100">
+            <h3 class="text-base font-semibold text-gray-900">Platform Fee Configuration</h3>
+            <p class="text-xs text-gray-500 mt-1">Set default platform fee for all charges in this organization</p>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Percentage (%)</label>
+                    <input type="number" name="platform_fee_percentage" value="{{ old('platform_fee_percentage') }}" step="0.01" min="0" max="100"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('platform_fee_percentage') border-red-500 @enderror">
+                    @error('platform_fee_percentage')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Operator</label>
+                    <select name="platform_fee_operator" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('platform_fee_operator') border-red-500 @enderror">
+                        <option value="">-</option>
+                        <option value="and">AND</option>
+                        <option value="or">OR</option>
+                    </select>
+                    @error('platform_fee_operator')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Fixed Amount (RM)</label>
+                    <input type="number" name="platform_fee_fixed" value="{{ old('platform_fee_fixed') }}" step="0.01" min="0"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('platform_fee_fixed') border-red-500 @enderror">
+                    @error('platform_fee_fixed')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-3">Example: 5% AND RM5 means charge 5% + RM5. Leave percentage empty for flat RM5 fee.</p>
+        </div>
+
         <!-- Form Actions -->
         <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
             <div class="flex justify-end space-x-3">
@@ -116,4 +184,22 @@
         </div>
     </form>
 </div>
+
+@push('scripts')
+<script>
+function updateLogoFileName(input) {
+    const fileNameDisplay = document.getElementById('logo-file-name');
+    if (input.files && input.files[0]) {
+        const fileName = input.files[0].name;
+        const fileSize = (input.files[0].size / 1024 / 1024).toFixed(2);
+        fileNameDisplay.textContent = `${fileName} (${fileSize} MB)`;
+        fileNameDisplay.classList.add('font-medium', 'text-green-600');
+    } else {
+        fileNameDisplay.textContent = 'PNG, JPG, GIF up to 2MB';
+        fileNameDisplay.classList.remove('font-medium', 'text-green-600');
+    }
+}
+</script>
+@endpush
+
 @endsection

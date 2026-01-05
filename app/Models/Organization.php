@@ -12,14 +12,24 @@ class Organization extends Model
 
     protected $fillable = [
         'name',
+        'organization_type_id',
         'logo',
         'email',
         'phone',
+        'pic_name',
         'address',
         'bank_name',
         'bank_account_number',
         'bank_account_holder',
+        'pending_bank_name',
+        'pending_bank_account_number',
+        'pending_bank_account_holder',
+        'bank_details_status',
+        'bank_details_reject_reason',
         'status',
+        'platform_fee_percentage',
+        'platform_fee_operator',
+        'platform_fee_fixed',
     ];
 
     protected $casts = [
@@ -31,9 +41,21 @@ class Organization extends Model
         return $this->hasMany(User::class);
     }
 
+    public function organizationType()
+    {
+        return $this->belongsTo(OrganizationType::class);
+    }
+
     public function members()
     {
         return $this->hasMany(Member::class);
+    }
+
+    public function membersList()
+    {
+        return $this->belongsToMany(Member::class, 'member_organization')
+            ->withPivot('joined_at', 'status', 'role', 'membership_number', 'notes')
+            ->withTimestamps();
     }
 
     public function charges()
