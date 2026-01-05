@@ -100,13 +100,6 @@
                 <option value="replied" {{ request('status') == 'replied' ? 'selected' : '' }}>Replied</option>
                 <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
             </select>
-            <select name="priority" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">All Priority</option>
-                <option value="low" {{ request('priority') == 'low' ? 'selected' : '' }}>Low</option>
-                <option value="medium" {{ request('priority') == 'medium' ? 'selected' : '' }}>Medium</option>
-                <option value="high" {{ request('priority') == 'high' ? 'selected' : '' }}>High</option>
-                <option value="urgent" {{ request('priority') == 'urgent' ? 'selected' : '' }}>Urgent</option>
-            </select>
             <select name="category" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="">All Categories</option>
                 <option value="General" {{ request('category') == 'General' ? 'selected' : '' }}>General</option>
@@ -118,7 +111,7 @@
             <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
                 Apply
             </button>
-            @if(request()->hasAny(['search', 'status', 'priority', 'category']))
+            @if(request()->hasAny(['search', 'status', 'category']))
             <a href="{{ route('organization.tickets.index') }}" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 transition">
                 Clear
             </a>
@@ -135,7 +128,6 @@
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ticket #</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Member</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Subject</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Priority</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Category</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Created</th>
@@ -156,15 +148,6 @@
                         </td>
                         <td class="px-4 py-3">
                             <p class="text-sm text-gray-900">{{ Str::limit($ticket->subject, 50) }}</p>
-                        </td>
-                        <td class="px-4 py-3">
-                            <span class="px-2 py-1 text-xs font-medium rounded-full
-                                {{ $ticket->priority == 'low' ? 'bg-gray-100 text-gray-700' : '' }}
-                                {{ $ticket->priority == 'medium' ? 'bg-blue-100 text-blue-700' : '' }}
-                                {{ $ticket->priority == 'high' ? 'bg-orange-100 text-orange-700' : '' }}
-                                {{ $ticket->priority == 'urgent' ? 'bg-red-100 text-red-700' : '' }}">
-                                {{ ucfirst($ticket->priority) }}
-                            </span>
                         </td>
                         <td class="px-4 py-3">
                             <span class="text-sm text-gray-600">{{ $ticket->category ?? '-' }}</span>
@@ -192,7 +175,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">
+                        <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">
                             No support tickets found.
                         </td>
                     </tr>
@@ -210,19 +193,18 @@ $(document).ready(function() {
     @if($tickets->count() > 0)
     $('#ticketsTable').DataTable({
         "pageLength": 15,
-        "order": [[6, "desc"]],
+        "order": [[5, "desc"]],
         "columns": [
             null, // Ticket #
             null, // Member
             null, // Subject
-            null, // Priority
             null, // Category
             null, // Status
             null, // Created
             null  // Actions
         ],
         "columnDefs": [
-            { "orderable": false, "targets": 7 }
+            { "orderable": false, "targets": 6 }
         ],
         "language": {
             "paginate": {

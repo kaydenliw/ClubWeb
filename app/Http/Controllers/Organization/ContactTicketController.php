@@ -29,10 +29,6 @@ class ContactTicketController extends Controller
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('priority')) {
-            $query->where('priority', $request->priority);
-        }
-
         if ($request->filled('category')) {
             $query->where('category', $request->category);
         }
