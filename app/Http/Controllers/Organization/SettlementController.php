@@ -28,6 +28,11 @@ class SettlementController extends Controller
             $query->whereDate('settlement_date', '<=', $request->date_to);
         }
 
+        // Calculate totals for filtered results before executing the query
+        $totals = (object) [
+            'total_amount' => $query->sum('amount')
+        ];
+
         $settlements = $query->latest('settlement_date')->get();
 
         // Get last completed settlement
@@ -51,9 +56,6 @@ class SettlementController extends Controller
                 ->sum('amount'),
             'pending_settlement_date' => $upcomingSettlement ? $upcomingSettlement->scheduled_date : null,
         ];
-
-        // Calculate totals for filtered results
-        $totals = $query->selectRaw('SUM(amount) as total_amount')->first();
 
         return view('organization.settlements.index', compact('settlements', 'stats', 'totals'));
     }

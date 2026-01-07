@@ -74,11 +74,13 @@ class TransactionController extends Controller
             $query->where('charge_id', $request->charge_id);
         }
 
-        $transactions = $query->latest()->get();
+        // Calculate totals for current filtered results before executing the query
+        $totals = (object) [
+            'total_amount' => $query->sum('amount'),
+            'total_platform_fee' => $query->sum('platform_fee')
+        ];
 
-        // Calculate totals for current filtered results
-        $totals = $query->selectRaw('SUM(amount) as total_amount, SUM(platform_fee) as total_platform_fee')
-            ->first();
+        $transactions = $query->latest()->get();
 
         // Get all charges for filter dropdown
         $charges = \App\Models\Charge::where('organization_id', $orgId)
