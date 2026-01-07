@@ -101,32 +101,32 @@
                                     @endif
 
                                     {{-- Type-specific details based on organization type --}}
-                                    @if($org->organizationType && isset($org->details))
+                                    @if($org->organizationType)
                                         <div class="mt-2 pt-2 border-t border-gray-100">
                                             @if($org->organizationType->slug === 'car_club')
                                                 <p class="text-gray-500 font-medium mb-1">🚗 Vehicle Details:</p>
-                                                @if($org->details->car_brand || $org->details->car_model)
+                                                @if($member->car_brand || $member->car_model)
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Vehicle:</span>
-                                                    <span class="text-gray-900 font-medium">{{ $org->details->car_brand }} {{ $org->details->car_model }}</span>
+                                                    <span class="text-gray-900 font-medium">{{ $member->car_brand }} {{ $member->car_model }}</span>
                                                 </div>
                                                 @endif
-                                                @if($org->details->car_plate)
+                                                @if($member->car_plate)
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Plate:</span>
-                                                    <span class="text-gray-900 font-medium">{{ $org->details->car_plate }}</span>
+                                                    <span class="text-gray-900 font-medium">{{ $member->car_plate }}</span>
                                                 </div>
                                                 @endif
-                                                @if($org->details->car_color)
+                                                @if($member->car_color)
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Color:</span>
-                                                    <span class="text-gray-900 font-medium">{{ $org->details->car_color }}</span>
+                                                    <span class="text-gray-900 font-medium">{{ $member->car_color }}</span>
                                                 </div>
                                                 @endif
-                                                @if($org->details->car_year)
+                                                @if($member->car_year)
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Year:</span>
-                                                    <span class="text-gray-900 font-medium">{{ $org->details->car_year }}</span>
+                                                    <span class="text-gray-900 font-medium">{{ $member->car_year }}</span>
                                                 </div>
                                                 @endif
                                             @endif

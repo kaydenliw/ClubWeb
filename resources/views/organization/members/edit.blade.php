@@ -121,27 +121,27 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Car Brand</label>
-                    <input type="text" name="car_brand" value="{{ old('car_brand', $membershipData['car_brand'] ?? '') }}" placeholder="e.g., Honda"
+                    <input type="text" name="car_brand" value="{{ old('car_brand', $member->car_brand) }}" placeholder="e.g., Honda"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Car Model</label>
-                    <input type="text" name="car_model" value="{{ old('car_model', $membershipData['car_model'] ?? '') }}" placeholder="e.g., Civic"
+                    <input type="text" name="car_model" value="{{ old('car_model', $member->car_model) }}" placeholder="e.g., Civic"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Car Plate</label>
-                    <input type="text" name="car_plate" value="{{ old('car_plate', $membershipData['car_plate'] ?? '') }}" placeholder="e.g., ABC 1234"
+                    <input type="text" name="car_plate" value="{{ old('car_plate', $member->car_plate) }}" placeholder="e.g., ABC 1234"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Car Color</label>
-                    <input type="text" name="car_color" value="{{ old('car_color', $membershipData['car_color'] ?? '') }}" placeholder="e.g., Red"
+                    <input type="text" name="car_color" value="{{ old('car_color', $member->car_color) }}" placeholder="e.g., Red"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Car Year</label>
-                    <input type="number" name="car_year" value="{{ old('car_year', $membershipData['car_year'] ?? '') }}" placeholder="e.g., 2020" min="1900" max="2099"
+                    <input type="number" name="car_year" value="{{ old('car_year', $member->car_year) }}" placeholder="e.g., 2020" min="1900" max="2099"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
             </div>

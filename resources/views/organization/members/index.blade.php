@@ -148,9 +148,9 @@
                         </td>
                         @if($organization->organizationType && $organization->organizationType->slug === 'car_club')
                         <td class="px-6 py-4">
-                            @if(isset($member->typeDetails))
-                                <div class="text-sm text-gray-900">{{ $member->typeDetails->car_brand }} {{ $member->typeDetails->car_model }}</div>
-                                <div class="text-xs text-gray-500">{{ $member->typeDetails->car_plate ?? '-' }}</div>
+                            @if($member->car_brand && $member->car_model)
+                                <div class="text-sm text-gray-900">{{ $member->car_brand }} {{ $member->car_model }}</div>
+                                <div class="text-xs text-gray-500">{{ $member->car_plate ?? '-' }}</div>
                             @else
                                 <div class="text-sm text-gray-500">-</div>
                             @endif

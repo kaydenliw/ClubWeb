@@ -113,23 +113,23 @@
                     <div class="grid grid-cols-3 gap-6">
                         <div>
                             <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Car Brand</label>
-                            <p class="mt-1 text-sm text-gray-900">{{ $org->details->car_brand ?? '-' }}</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ $member->car_brand ?? '-' }}</p>
                         </div>
                         <div>
                             <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Car Model</label>
-                            <p class="mt-1 text-sm text-gray-900">{{ $org->details->car_model ?? '-' }}</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ $member->car_model ?? '-' }}</p>
                         </div>
                         <div>
                             <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Car Plate</label>
-                            <p class="mt-1 text-sm text-gray-900">{{ $org->details->car_plate ?? '-' }}</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ $member->car_plate ?? '-' }}</p>
                         </div>
                         <div>
                             <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Car Color</label>
-                            <p class="mt-1 text-sm text-gray-900">{{ $org->details->car_color ?? '-' }}</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ $member->car_color ?? '-' }}</p>
                         </div>
                         <div>
                             <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Car Year</label>
-                            <p class="mt-1 text-sm text-gray-900">{{ $org->details->car_year ?? '-' }}</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ $member->car_year ?? '-' }}</p>
                         </div>
                     </div>
                     @elseif($org->organizationType->slug === 'residential_club')
