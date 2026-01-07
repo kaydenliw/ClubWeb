@@ -256,8 +256,24 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    // Disable DataTables - using Laravel pagination instead
-    // Just add basic sorting functionality
+    // Initialize DataTable
+    $('#membersTable').DataTable({
+        "pageLength": 15,
+        "order": [[1, "asc"]], // Sort by member name
+        "columnDefs": [
+            { "orderable": false, "targets": 0 }, // Disable sorting on checkbox column
+            { "orderable": false, "targets": -1 } // Disable sorting on actions column
+        ],
+        "language": {
+            "paginate": {
+                "previous": "← Previous",
+                "next": "Next →"
+            },
+            "info": "Showing _START_ to _END_ of _TOTAL_ members",
+            "infoEmpty": "No members available",
+            "zeroRecords": "No matching members found"
+        }
+    });
 
     // Select All functionality
     $('#selectAll').on('change', function() {
