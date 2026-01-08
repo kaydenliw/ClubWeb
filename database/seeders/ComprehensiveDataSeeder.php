@@ -8,6 +8,7 @@ use App\Models\Member;
 use App\Models\Charge;
 use App\Models\Transaction;
 use App\Models\Settlement;
+use App\Models\ContactTicket;
 use Illuminate\Support\Facades\DB;
 
 class ComprehensiveDataSeeder extends Seeder
@@ -23,13 +24,19 @@ class ComprehensiveDataSeeder extends Seeder
         // Step 1: Sync members to member_organization pivot
         $this->syncMembersToOrganizations();
 
-        // Step 2: Assign charges to members via charge_member pivot
+        // Step 2: Create multi-organization members (realistic scenario)
+        $this->createMultiOrganizationMembers();
+
+        // Step 3: Assign charges to members via charge_member pivot
         $this->assignChargesToMembers();
 
-        // Step 3: Create last month transactions for pie chart
+        // Step 4: Create last month transactions for pie chart
         $this->createLastMonthTransactions();
 
-        // Step 4: Create additional settlements if needed
+        // Step 5: Create support tickets for multiple organizations
+        $this->createSupportTickets();
+
+        // Step 6: Create additional settlements if needed
         $this->ensureSettlements();
 
         $this->command->info('Comprehensive data seeding completed!');
@@ -73,6 +80,62 @@ class ComprehensiveDataSeeder extends Seeder
         }
 
         $this->command->info("✓ Synced {$synced} members to member_organization pivot");
+    }
+
+    private function createMultiOrganizationMembers()
+    {
+        $this->command->info('Creating multi-organization members (realistic scenario)...');
+
+        $organizations = Organization::all();
+
+        if ($organizations->count() < 2) {
+            $this->command->warn('Need at least 2 organizations for multi-membership scenario');
+            return;
+        }
+
+        // Get some existing members to add to multiple organizations
+        $members = Member::inRandomOrder()->limit(10)->get();
+        $added = 0;
+
+        foreach ($members as $member) {
+            // Each member joins 1-2 additional organizations (20-30% chance per org)
+            $additionalOrgs = $organizations->where('id', '!=', $member->organization_id)
+                ->random(min(rand(1, 2), $organizations->count() - 1));
+
+            foreach ($additionalOrgs as $org) {
+                // Check if already exists
+                $exists = DB::table('member_organization')
+                    ->where('member_id', $member->id)
+                    ->where('organization_id', $org->id)
+                    ->exists();
+
+                if (!$exists) {
+                    $membershipNumber = 'MEM-' . strtoupper(substr($org->name, 0, 3)) . '-' . str_pad($member->id, 4, '0', STR_PAD_LEFT);
+                    $roles = ['member', 'member', 'member', 'committee'];
+
+                    $pivotId = DB::table('member_organization')->insertGetId([
+                        'member_id' => $member->id,
+                        'organization_id' => $org->id,
+                        'joined_at' => now()->subMonths(rand(1, 12)),
+                        'status' => 'active',
+                        'role' => $roles[array_rand($roles)],
+                        'membership_number' => $membershipNumber,
+                        'notes' => 'Multi-organization member',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    // Create organization-specific details based on type
+                    if ($org->organizationType) {
+                        $this->createOrganizationDetails($pivotId, $org->organizationType->slug);
+                    }
+
+                    $added++;
+                }
+            }
+        }
+
+        $this->command->info("✓ Added {$added} multi-organization memberships");
     }
 
     private function assignChargesToMembers()
@@ -269,6 +332,84 @@ class ComprehensiveDataSeeder extends Seeder
         $this->command->info("✓ Created {$created} last month transactions");
     }
 
+    private function createSupportTickets()
+    {
+        $this->command->info('Creating support tickets for multiple organizations...');
+
+        $organizations = Organization::all();
+        $created = 0;
+
+        $subjects = [
+            'Payment Issue - Unable to process payment',
+            'Membership Card Request',
+            'Update Contact Information',
+            'Event Registration Question',
+            'Billing Inquiry - Duplicate Charge',
+            'Account Access Problem',
+            'Refund Request',
+            'Change Membership Plan',
+            'Technical Support Needed',
+            'General Inquiry'
+        ];
+
+        $messages = [
+            'I am having trouble accessing my account. Can you please help?',
+            'I would like to request a refund for the recent charge.',
+            'Could you please update my contact information in the system?',
+            'I need assistance with registering for the upcoming event.',
+            'I noticed a duplicate charge on my account. Please investigate.',
+            'My payment was declined but I have sufficient funds. What should I do?',
+            'I would like to upgrade my membership plan. What are the options?',
+            'Can I get a physical membership card sent to my address?',
+            'I am experiencing technical issues with the member portal.',
+            'I have a general question about the membership benefits.'
+        ];
+
+        foreach ($organizations as $org) {
+            // Get members who belong to this organization
+            $memberIds = DB::table('member_organization')
+                ->where('organization_id', $org->id)
+                ->pluck('member_id');
+
+            if ($memberIds->isEmpty()) {
+                continue;
+            }
+
+            // Create 5-15 tickets per organization
+            $ticketCount = rand(5, 15);
+
+            for ($i = 0; $i < $ticketCount; $i++) {
+                $memberId = $memberIds->random();
+                $createdAt = now()->subDays(rand(1, 60));
+
+                $statuses = ['open', 'open', 'replied', 'replied', 'closed'];
+                $status = $statuses[array_rand($statuses)];
+
+                $priorities = ['low', 'low', 'medium', 'medium', 'high'];
+                $priority = $priorities[array_rand($priorities)];
+
+                $ticket = ContactTicket::create([
+                    'organization_id' => $org->id,
+                    'member_id' => $memberId,
+                    'ticket_number' => 'TKT-' . strtoupper(uniqid()),
+                    'subject' => $subjects[array_rand($subjects)],
+                    'message' => $messages[array_rand($messages)],
+                    'status' => $status,
+                    'priority' => $priority,
+                    'category' => ['billing', 'technical', 'general', 'membership'][array_rand(['billing', 'technical', 'general', 'membership'])],
+                    'reply' => $status !== 'open' ? 'Thank you for contacting us. We have reviewed your request and will assist you shortly.' : null,
+                    'replied_at' => $status !== 'open' ? $createdAt->copy()->addHours(rand(2, 48)) : null,
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
+                ]);
+
+                $created++;
+            }
+        }
+
+        $this->command->info("✓ Created {$created} support tickets across organizations");
+    }
+
     private function ensureSettlements()
     {
         $this->command->info('Ensuring settlements exist with linked transactions...');
@@ -332,5 +473,50 @@ class ComprehensiveDataSeeder extends Seeder
         }
 
         $this->command->info("✓ Created {$created} settlements with {$linked} linked transactions");
+    }
+
+    private function createOrganizationDetails($pivotId, $typeSlug)
+    {
+        $carBrands = ['Honda', 'Toyota', 'BMW', 'Mercedes', 'Mazda', 'Nissan'];
+        $carModels = ['Civic', 'Accord', 'Camry', 'Corolla', 'CX-5', 'X5', 'C-Class'];
+        $colors = ['Black', 'White', 'Silver', 'Red', 'Blue', 'Grey'];
+
+        switch ($typeSlug) {
+            case 'car_club':
+                \App\Models\MemberOrganizationCarDetail::create([
+                    'member_organization_id' => $pivotId,
+                    'car_brand' => $carBrands[array_rand($carBrands)],
+                    'car_model' => $carModels[array_rand($carModels)],
+                    'car_plate' => strtoupper(substr(uniqid(), -7)),
+                    'car_color' => $colors[array_rand($colors)],
+                    'car_year' => rand(2015, 2024),
+                ]);
+                break;
+
+            case 'residential_club':
+                \App\Models\MemberOrganizationResidentialDetail::create([
+                    'member_organization_id' => $pivotId,
+                    'unit_number' => rand(1, 50) . '-' . rand(1, 20),
+                    'block' => chr(rand(65, 72)), // A-H
+                    'floor' => rand(1, 25),
+                    'address_line_1' => rand(1, 999) . ' Main Street',
+                    'address_line_2' => 'Apartment ' . rand(1, 100),
+                    'postcode' => rand(10000, 99999),
+                    'city' => ['Kuala Lumpur', 'Petaling Jaya', 'Shah Alam'][array_rand(['Kuala Lumpur', 'Petaling Jaya', 'Shah Alam'])],
+                    'state' => 'Selangor',
+                ]);
+                break;
+
+            case 'sports_club':
+                \App\Models\MemberOrganizationSportsDetail::create([
+                    'member_organization_id' => $pivotId,
+                    'emergency_contact_name' => 'Emergency Contact ' . rand(1, 100),
+                    'emergency_contact_phone' => '+6012' . rand(1000000, 9999999),
+                    'blood_type' => ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'][array_rand(['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'])],
+                    'medical_conditions' => rand(0, 1) ? 'None' : 'Asthma',
+                    'preferred_sports' => ['Football', 'Basketball', 'Tennis', 'Swimming', 'Badminton'][array_rand(['Football', 'Basketball', 'Tennis', 'Swimming', 'Badminton'])],
+                ]);
+                break;
+        }
     }
 }

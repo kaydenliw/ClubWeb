@@ -1,15 +1,31 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Create Charge')
-@section('page-title', 'Create New Charge')
+@section('title', 'Create Charge or Plan')
+@section('page-title', 'Create New Charge or Plan')
 
 @section('content')
 @include('layouts.partials.breadcrumb', ['items' => [
     ['label' => 'Dashboard', 'url' => route('organization.dashboard')],
-    ['label' => 'Charges', 'url' => route('organization.charges.index')],
+    ['label' => 'Charges & Plans', 'url' => route('organization.charges.index')],
     ['label' => 'Create', 'url' => null]
 ]])
-<div class="max-w-3xl">
+<div class="max-w-4xl mx-auto px-4 py-6">
+    <!-- Info Banner -->
+    <div class="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div class="text-sm">
+                <p class="font-medium text-gray-900 mb-1">What are you creating?</p>
+                <ul class="space-y-1 text-gray-700">
+                    <li><span class="font-semibold text-blue-600">Subscription Plan</span> - Recurring payments (e.g., monthly membership fees, annual dues)</li>
+                    <li><span class="font-semibold text-purple-600">One-Time Charge</span> - Single payments (e.g., event tickets, workshop fees, merchandise)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
     <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
         <form method="POST" action="{{ route('organization.charges.store') }}" enctype="multipart/form-data">
             @csrf
@@ -18,12 +34,13 @@
                 <!-- Title -->
                 <div>
                     <label for="title" class="block text-sm font-medium text-gray-700 mb-1">
-                        Charge Name <span class="text-red-500">*</span>
+                        Title <span class="text-red-500">*</span>
                     </label>
                     <input type="text"
                            name="title"
                            id="title"
                            value="{{ old('title') }}"
+                           placeholder="e.g., Gold Membership, Annual Conference Ticket"
                            required
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('title') border-red-500 @enderror">
                     @error('title')
@@ -64,40 +81,57 @@
                 </div>
 
                 <!-- Recurring -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Recurring <span class="text-red-500">*</span>
+                <div class="border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                        Type <span class="text-red-500">*</span>
                     </label>
                     <div class="space-y-3">
-                        <label class="flex items-center">
+                        <label class="flex items-start p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
                             <input type="radio" name="is_recurring" value="1"
                                    {{ old('is_recurring') == '1' ? 'checked' : '' }}
-                                   class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-700">YES</span>
+                                   class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 mt-0.5">
+                            <div class="ml-3">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                    <span class="text-sm font-semibold text-gray-900">Subscription Plan (Recurring)</span>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-1">Members pay regularly (monthly/yearly). Perfect for membership fees.</p>
+                            </div>
                         </label>
-                        <label class="flex items-center">
+                        <label class="flex items-start p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-50 transition has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
                             <input type="radio" name="is_recurring" value="0"
                                    {{ old('is_recurring', '0') == '0' ? 'checked' : '' }}
-                                   class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-700">NO, One-Time ONLY</span>
+                                   class="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500 mt-0.5">
+                            <div class="ml-3">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                    <span class="text-sm font-semibold text-gray-900">One-Time Charge</span>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-1">Single payment only. Perfect for events, workshops, or merchandise.</p>
+                            </div>
                         </label>
                     </div>
                 </div>
 
-                <!-- Recurring Months (shown when YES is selected) -->
+                <!-- Recurring Months (shown when recurring is selected) -->
                 <div id="recurringMonthsField" style="display: none;">
                     <label for="recurring_months" class="block text-sm font-medium text-gray-700 mb-1">
-                        Every (months) <span class="text-red-500">*</span>
+                        Billing Frequency <span class="text-red-500">*</span>
                     </label>
                     <select name="recurring_months" id="recurring_months"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <option value="">Select months</option>
+                        <option value="">Select frequency</option>
                         @for($i = 1; $i <= 12; $i++)
                             <option value="{{ $i }}" {{ old('recurring_months') == $i ? 'selected' : '' }}>
-                                {{ $i }} {{ $i == 1 ? 'month' : 'months' }}
+                                Every {{ $i }} {{ $i == 1 ? 'month' : 'months' }}
                             </option>
                         @endfor
                     </select>
+                    <p class="mt-1 text-xs text-gray-500">How often members will be charged for this plan</p>
                 </div>
 
                 <!-- Status -->
@@ -164,7 +198,7 @@
                 </a>
                 <button type="submit"
                         class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
-                    Create Charge
+                    Create
                 </button>
             </div>
         </form>

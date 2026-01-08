@@ -131,21 +131,21 @@
                                                 @endif
                                             @endif
 
-                                            @if($org->organizationType->slug === 'residential_club')
+                                            @if($org->organizationType->slug === 'residential_club' && $org->details)
                                                 <p class="text-gray-500 font-medium mb-1">🏠 Residential Details:</p>
-                                                @if($org->details->unit_number)
+                                                @if($org->details->unit_number ?? false)
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Unit:</span>
                                                     <span class="text-gray-900 font-medium">{{ $org->details->unit_number }}</span>
                                                 </div>
                                                 @endif
-                                                @if($org->details->block)
+                                                @if($org->details->block ?? false)
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Block:</span>
                                                     <span class="text-gray-900 font-medium">{{ $org->details->block }}</span>
                                                 </div>
                                                 @endif
-                                                @if($org->details->address_line_1)
+                                                @if($org->details->address_line_1 ?? false)
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Address:</span>
                                                     <span class="text-gray-900 font-medium">{{ $org->details->address_line_1 }}</span>
@@ -153,33 +153,33 @@
                                                 @endif
                                             @endif
 
-                                            @if($org->organizationType->slug === 'sports_club')
+                                            @if($org->organizationType->slug === 'sports_club' && $org->details)
                                                 <p class="text-gray-500 font-medium mb-1">⚽ Sports Club Details:</p>
-                                                @if($org->details->emergency_contact_name)
+                                                @if($org->details->emergency_contact_name ?? false)
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Emergency Contact:</span>
                                                     <span class="text-gray-900 font-medium">{{ $org->details->emergency_contact_name }}</span>
                                                 </div>
                                                 @endif
-                                                @if($org->details->emergency_contact_phone)
+                                                @if($org->details->emergency_contact_phone ?? false)
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Contact Phone:</span>
                                                     <span class="text-gray-900 font-medium">{{ $org->details->emergency_contact_phone }}</span>
                                                 </div>
                                                 @endif
-                                                @if($org->details->blood_type)
+                                                @if($org->details->blood_type ?? false)
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Blood Type:</span>
                                                     <span class="text-gray-900 font-medium">{{ $org->details->blood_type }}</span>
                                                 </div>
                                                 @endif
-                                                @if($org->details->preferred_sports)
+                                                @if($org->details->preferred_sports ?? false)
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Preferred Sports:</span>
                                                     <span class="text-gray-900 font-medium">{{ $org->details->preferred_sports }}</span>
                                                 </div>
                                                 @endif
-                                                @if($org->details->medical_conditions)
+                                                @if($org->details->medical_conditions ?? false)
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Medical Notes:</span>
                                                     <span class="text-gray-900 font-medium text-right">{{ $org->details->medical_conditions }}</span>
@@ -247,16 +247,27 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Transaction #</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Organization</th>
                             <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Amount</th>
                             <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Type</th>
                             <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                             <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         @forelse($member->transactions->take(10) as $txn)
                         <tr>
                             <td class="px-4 py-3 text-sm text-gray-900">{{ $txn->transaction_number ?? '#' . $txn->id }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">
+                                @if($txn->organization)
+                                    <span class="inline-flex items-center px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-medium">
+                                        {{ $txn->organization->name }}
+                                    </span>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-sm font-semibold {{ $txn->type == 'payment' ? 'text-green-600' : 'text-red-600' }}">
                                 {{ $txn->type == 'payment' ? '+' : '-' }}RM {{ number_format(abs($txn->amount), 2) }}
                             </td>
@@ -274,10 +285,15 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-sm text-gray-600">{{ $txn->created_at->format('d M Y') }}</td>
+                            <td class="px-4 py-3">
+                                <a href="{{ route('admin.transactions.show', $txn) }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                    View
+                                </a>
+                            </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-4 text-center text-sm text-gray-500">No transactions found</td>
+                            <td colspan="7" class="px-4 py-4 text-center text-sm text-gray-500">No transactions found</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -297,6 +313,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Ticket #</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Organization</th>
                             <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Subject</th>
                             <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                             <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
@@ -307,6 +324,15 @@
                         @forelse($member->contactTickets->take(10) as $ticket)
                         <tr>
                             <td class="px-4 py-3 text-sm text-gray-900">{{ $ticket->ticket_number }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">
+                                @if($ticket->organization)
+                                    <span class="inline-flex items-center px-2 py-1 rounded-md bg-purple-50 text-purple-700 text-xs font-medium">
+                                        {{ $ticket->organization->name }}
+                                    </span>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-sm text-gray-900">{{ Str::limit($ticket->subject, 40) }}</td>
                             <td class="px-4 py-3">
                                 <span class="px-2 py-1 text-xs font-medium rounded-full
@@ -325,7 +351,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-4 text-center text-sm text-gray-500">No support tickets found</td>
+                            <td colspan="6" class="px-4 py-4 text-center text-sm text-gray-500">No support tickets found</td>
                         </tr>
                         @endforelse
                     </tbody>

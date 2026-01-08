@@ -13,12 +13,45 @@
     <div class="flex justify-between items-center">
         <div>
             <h3 class="text-lg font-semibold text-gray-900">Manage Charges & Plans</h3>
-            <p class="text-sm text-gray-500 mt-1">Create and manage membership charges and plans</p>
+            <p class="text-sm text-gray-500 mt-1">
+                <span class="font-medium text-blue-600">Plans</span> are recurring subscriptions (monthly/yearly) •
+                <span class="font-medium text-purple-600">Charges</span> are one-time payments for events or services
+            </p>
         </div>
         <a href="{{ route('organization.charges.create') }}"
            class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
-            + Add New Charge
+            + Add New
         </a>
+    </div>
+
+    <!-- Type Tabs -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-1">
+        <div class="flex gap-2">
+            <button onclick="filterByType('all')" id="tab-all" class="flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition tab-button active">
+                <span class="flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                    </svg>
+                    All Items
+                </span>
+            </button>
+            <button onclick="filterByType('recurring')" id="tab-recurring" class="flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition tab-button">
+                <span class="flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Subscription Plans
+                </span>
+            </button>
+            <button onclick="filterByType('one-time')" id="tab-one-time" class="flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition tab-button">
+                <span class="flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    One-Time Charges
+                </span>
+            </button>
+        </div>
     </div>
 
     <!-- Filters -->
@@ -28,26 +61,20 @@
                 <input type="text"
                        name="search"
                        value="{{ request('search') }}"
-                       placeholder="Search charges..."
+                       placeholder="Search by title or description..."
                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             </div>
-            <select name="type" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">All Types</option>
-                <option value="monthly" {{ request('type') == 'monthly' ? 'selected' : '' }}>Monthly</option>
-                <option value="yearly" {{ request('type') == 'yearly' ? 'selected' : '' }}>Yearly</option>
-                <option value="one-time" {{ request('type') == 'one-time' ? 'selected' : '' }}>One-time</option>
-            </select>
             <select name="status" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="">All Status</option>
                 <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
                 <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
             </select>
             <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
-                Apply
+                Apply Filters
             </button>
-            @if(request()->hasAny(['search', 'type', 'status']))
+            @if(request()->hasAny(['search', 'status']))
             <a href="{{ route('organization.charges.index') }}" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 transition">
-                Clear
+                Clear Filters
             </a>
             @endif
         </form>
@@ -85,9 +112,10 @@
                         <th class="px-4 py-3 text-left">
                             <input type="checkbox" id="selectAll" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                         </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Type</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Title</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Amount</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Charges Every</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Frequency</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Last Modified</th>
                         <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
@@ -95,9 +123,26 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     @forelse($charges as $charge)
-                    <tr class="hover:bg-gray-50 transition">
+                    <tr class="hover:bg-gray-50 transition charge-row" data-charge-type="{{ $charge->recurring_frequency === 'one-time' ? 'one-time' : 'recurring' }}">
                         <td class="px-4 py-3">
                             <input type="checkbox" class="charge-checkbox w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" value="{{ $charge->id }}">
+                        </td>
+                        <td class="px-4 py-3">
+                            @if($charge->recurring_frequency === 'one-time')
+                                <span class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-purple-100 text-purple-800 border border-purple-200">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                    One-Time
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-100 text-blue-800 border border-blue-200">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                    Plan
+                                </span>
+                            @endif
                         </td>
                         <td class="px-4 py-3">
                             <div>
@@ -109,11 +154,11 @@
                             <span class="text-sm font-semibold text-gray-900">RM {{ number_format($charge->amount, 2) }}</span>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="text-sm text-gray-900">
+                            <span class="text-sm text-gray-700">
                                 @if($charge->recurring_frequency === 'one-time')
-                                    One-Time
+                                    <span class="text-purple-600 font-medium">One-Time Payment</span>
                                 @else
-                                    {{ ucwords(str_replace('-', ' ', $charge->recurring_frequency)) }}
+                                    <span class="text-blue-600 font-medium">Every {{ $charge->recurring_months ?? 1 }} {{ ($charge->recurring_months ?? 1) > 1 ? 'Months' : 'Month' }}</span>
                                 @endif
                             </span>
                         </td>
@@ -176,9 +221,13 @@
                         </td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">
-                            No charges found. Create your first charge to get started.
+                    <tr id="emptyState">
+                        <td colspan="8" class="px-4 py-12 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                            <p class="mt-2 text-sm font-medium text-gray-900">No items found</p>
+                            <p class="mt-1 text-sm text-gray-500">Get started by creating a subscription plan or one-time charge.</p>
                         </td>
                     </tr>
                     @endforelse
@@ -190,22 +239,37 @@
 @endsection
 
 @push('scripts')
+<style>
+.tab-button {
+    color: #6b7280;
+    background-color: transparent;
+}
+.tab-button:hover {
+    color: #374151;
+    background-color: #f3f4f6;
+}
+.tab-button.active {
+    color: #1f2937;
+    background-color: #e5e7eb;
+    font-weight: 600;
+}
+</style>
 <script>
 $(document).ready(function() {
     $('#chargesTable').DataTable({
         "pageLength": 10,
-        "order": [[1, "desc"]],
+        "order": [[2, "desc"]],
         "columnDefs": [
-            { "orderable": false, "targets": [0, 6] }
+            { "orderable": false, "targets": [0, 1, 7] }
         ],
         "language": {
             "paginate": {
                 "previous": "← Previous",
                 "next": "Next →"
             },
-            "info": "Showing _START_ to _END_ of _TOTAL_ charges",
-            "infoEmpty": "No charges available",
-            "zeroRecords": "No matching charges found"
+            "info": "Showing _START_ to _END_ of _TOTAL_ items",
+            "infoEmpty": "No items available",
+            "zeroRecords": "No matching items found"
         }
     });
 
@@ -231,6 +295,23 @@ $(document).ready(function() {
         }
     }
 });
+
+// Tab filtering functionality
+function filterByType(type) {
+    // Update active tab styling
+    $('.tab-button').removeClass('active');
+    $('#tab-' + type).addClass('active');
+
+    const table = $('#chargesTable').DataTable();
+
+    if (type === 'all') {
+        table.column(1).search('').draw();
+    } else if (type === 'recurring') {
+        table.column(1).search('Plan').draw();
+    } else if (type === 'one-time') {
+        table.column(1).search('One-Time').draw();
+    }
+}
 
 function clearSelection() {
     $('.charge-checkbox').prop('checked', false);

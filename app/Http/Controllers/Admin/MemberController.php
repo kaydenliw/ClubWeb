@@ -48,7 +48,7 @@ class MemberController extends Controller
 
     public function show(Member $member)
     {
-        $member->load(['organization', 'organizations.organizationType', 'transactions', 'charges', 'contactTickets']);
+        $member->load(['organization', 'organizations.organizationType', 'transactions.organization', 'charges', 'contactTickets.organization']);
 
         // Load type-specific details for each organization membership
         foreach ($member->organizations as $org) {
