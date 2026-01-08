@@ -3,7 +3,7 @@
     <div class="p-6 border-b border-gray-100">
         @if(auth()->user()->role === 'super_admin')
             <div class="flex items-center justify-center">
-                <img src="{{ asset('storage/logos/mymember_logo_white.png') }}" alt="MyMember Logo" class="h-12 w-auto">
+                <img src="{{ asset('public/logos/mymember_logo_white.png') }}" alt="MyMember Logo" class="h-12 w-auto">
             </div>
             <p class="text-xs text-gray-500 text-center mt-2">Admin Panel</p>
         @else

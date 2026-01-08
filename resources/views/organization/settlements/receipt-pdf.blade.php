@@ -130,7 +130,7 @@
 <body>
     <!-- Header with Logo -->
     <div class="header">
-        <img src="{{ storage_path('app/public/logos/mymember_logo_white.png') }}" alt="Logo">
+        <img src="{{ public_path('logos/mymember_logo_white.png') }}" alt="Logo">
         <h1>SETTLEMENT RECEIPT</h1>
         <p>Official Receipt</p>
     </div>

@@ -89,12 +89,40 @@ class ComprehensiveDataSeeder extends Seeder
                 ->get();
 
             if ($charges->isEmpty()) {
+                $this->command->warn("No active charges found for organization: {$org->name}");
                 continue;
             }
 
             foreach ($members as $member) {
-                // Assign 1-3 charges to each member
-                $chargesToAssign = $charges->random(min(rand(1, 3), $charges->count()));
+                // ENSURE EVERY MEMBER HAS AT LEAST ONE RECURRING CHARGE (no N/A)
+                // Get recurring charges (monthly, annually, etc.)
+                $recurringCharges = $charges->filter(function($charge) {
+                    return $charge->is_recurring && in_array($charge->recurring_frequency, ['monthly', 'bi-monthly', 'semi-annually', 'annually']);
+                });
+
+                // If no recurring charges, use any active charge
+                if ($recurringCharges->isEmpty()) {
+                    $recurringCharges = $charges;
+                }
+
+                // Assign 2-3 charges to each member (at least 1 recurring for payment status)
+                $numCharges = min(rand(2, 3), $charges->count());
+
+                // Always include at least one recurring charge first
+                $chargesToAssign = collect();
+                if ($recurringCharges->isNotEmpty()) {
+                    $chargesToAssign->push($recurringCharges->random());
+                }
+
+                // Add additional random charges
+                $remainingCount = $numCharges - $chargesToAssign->count();
+                if ($remainingCount > 0 && $charges->count() > 1) {
+                    $additionalCharges = $charges->whereNotIn('id', $chargesToAssign->pluck('id'))
+                        ->random(min($remainingCount, $charges->count() - 1));
+                    $chargesToAssign = $chargesToAssign->merge(
+                        is_iterable($additionalCharges) ? $additionalCharges : [$additionalCharges]
+                    );
+                }
 
                 foreach ($chargesToAssign as $charge) {
                     // Check if already exists
@@ -107,10 +135,23 @@ class ComprehensiveDataSeeder extends Seeder
                         // Calculate next renewal date based on recurring frequency
                         $nextRenewalDate = $this->calculateNextRenewalDate($charge);
 
-                        // Determine payment status
-                        $statuses = ['pending', 'pending', 'paid', 'overdue'];
-                        $status = $statuses[array_rand($statuses)];
-                        $paidAt = $status === 'paid' ? now()->subDays(rand(1, 30)) : null;
+                        // More realistic payment status distribution
+                        // 60% paid, 25% pending, 10% overdue, 5% due soon
+                        $rand = rand(1, 100);
+                        if ($rand <= 60) {
+                            $status = 'paid';
+                            $paidAt = now()->subDays(rand(1, 30));
+                        } elseif ($rand <= 85) {
+                            $status = 'pending';
+                            $paidAt = null;
+                        } else {
+                            $status = 'overdue';
+                            $paidAt = null;
+                            // Set renewal date in the past for overdue
+                            if ($nextRenewalDate) {
+                                $nextRenewalDate = now()->subDays(rand(1, 14));
+                            }
+                        }
 
                         DB::table('charge_member')->insert([
                             'member_id' => $member->id,
@@ -139,17 +180,21 @@ class ComprehensiveDataSeeder extends Seeder
 
         $now = now();
 
+        // Add some variation to renewal dates (within +/- 7 days)
+        $daysVariation = rand(-7, 7);
+
         switch ($charge->recurring_frequency) {
             case 'monthly':
-                return $now->copy()->addMonth();
+                return $now->copy()->addMonth()->addDays($daysVariation);
             case 'bi-monthly':
-                return $now->copy()->addMonths(2);
+                return $now->copy()->addMonths(2)->addDays($daysVariation);
             case 'semi-annually':
-                return $now->copy()->addMonths(6);
+                return $now->copy()->addMonths(6)->addDays($daysVariation);
             case 'annually':
-                return $now->copy()->addYear();
+                return $now->copy()->addYear()->addDays($daysVariation);
             default:
-                return null;
+                // For any other frequency, default to 1 month
+                return $now->copy()->addMonth();
         }
     }
 
@@ -167,21 +212,39 @@ class ComprehensiveDataSeeder extends Seeder
                 ->get();
 
             if ($members->isEmpty() || $charges->isEmpty()) {
+                $this->command->warn("Skipping transactions for {$org->name} - no members or charges");
                 continue;
             }
 
-            // Create 10-20 transactions for last month
-            $transactionCount = rand(10, 20);
+            // Create MORE transactions for a comprehensive pie chart (30-50 per org)
+            $transactionCount = rand(30, 50);
+
+            // Ensure each charge type gets some transactions for pie chart variety
+            $chargeDistribution = [];
+            foreach ($charges as $charge) {
+                $chargeDistribution[$charge->id] = rand(3, 10); // Each charge gets 3-10 transactions
+            }
 
             for ($i = 0; $i < $transactionCount; $i++) {
                 $member = $members->random();
-                $charge = $charges->random();
+
+                // Use weighted distribution to ensure all charges appear in pie chart
+                if (!empty($chargeDistribution)) {
+                    $chargeId = array_rand($chargeDistribution);
+                    $charge = $charges->firstWhere('id', $chargeId);
+                    $chargeDistribution[$chargeId]--;
+                    if ($chargeDistribution[$chargeId] <= 0) {
+                        unset($chargeDistribution[$chargeId]);
+                    }
+                } else {
+                    $charge = $charges->random();
+                }
 
                 $lastMonth = now()->subMonth();
                 $createdAt = $lastMonth->copy()->startOfMonth()->addDays(rand(0, $lastMonth->daysInMonth - 1));
 
                 $platformFee = $charge->amount * 0.05;
-                $paymentMethods = ['cash', 'card', 'bank_transfer', 'online'];
+                $paymentMethods = ['online', 'online', 'bank_transfer', 'card', 'cash']; // More online payments
 
                 Transaction::create([
                     'organization_id' => $org->id,
@@ -194,8 +257,8 @@ class ComprehensiveDataSeeder extends Seeder
                     'payment_method' => $paymentMethods[array_rand($paymentMethods)],
                     'status' => 'completed',
                     'notes' => null,
-                    'synced_to_accounting' => rand(0, 1) == 1,
-                    'synced_at' => rand(0, 1) == 1 ? $createdAt->copy()->addDays(rand(1, 5)) : null,
+                    'synced_to_accounting' => rand(0, 10) > 3, // 70% synced
+                    'synced_at' => rand(0, 10) > 3 ? $createdAt->copy()->addDays(rand(1, 5)) : null,
                     'created_at' => $createdAt,
                     'updated_at' => $createdAt,
                 ]);
@@ -208,38 +271,66 @@ class ComprehensiveDataSeeder extends Seeder
 
     private function ensureSettlements()
     {
-        $this->command->info('Ensuring settlements exist for all organizations...');
+        $this->command->info('Ensuring settlements exist with linked transactions...');
 
         $organizations = Organization::all();
         $created = 0;
+        $linked = 0;
 
         foreach ($organizations as $org) {
-            // Check if organization has at least one settlement
-            $settlementCount = Settlement::where('organization_id', $org->id)->count();
+            // Get completed transactions without settlement_id
+            $unlinkedTransactions = Transaction::where('organization_id', $org->id)
+                ->where('status', 'completed')
+                ->where('type', 'payment')
+                ->whereNull('settlement_id')
+                ->get();
 
-            if ($settlementCount === 0) {
-                // Create at least one completed settlement
-                $amount = rand(5000, 15000);
-                $completedDate = now()->subMonths(rand(1, 2));
+            if ($unlinkedTransactions->isEmpty()) {
+                $this->command->warn("No unlinked transactions for {$org->name}");
+                continue;
+            }
 
-                Settlement::create([
+            // Group transactions by month for realistic settlements
+            $transactionsByMonth = $unlinkedTransactions->groupBy(function($txn) {
+                return $txn->created_at->format('Y-m');
+            });
+
+            foreach ($transactionsByMonth as $month => $transactions) {
+                // Calculate settlement amounts
+                $totalAmount = $transactions->sum('amount');
+                $totalPlatformFee = $transactions->sum('platform_fee');
+                $netAmount = $totalAmount - $totalPlatformFee;
+
+                // Use the latest transaction date in that month
+                $latestTxnDate = $transactions->max('created_at');
+                $completedDate = $latestTxnDate->copy()->addDays(rand(5, 10));
+
+                // Create settlement
+                $settlement = Settlement::create([
                     'organization_id' => $org->id,
                     'settlement_number' => 'STL' . strtoupper(uniqid()),
-                    'amount' => $amount,
+                    'amount' => $netAmount, // Net amount after platform fee
                     'settlement_date' => $completedDate->toDateString(),
                     'scheduled_date' => $completedDate->toDateString(),
                     'status' => 'completed',
                     'completed_at' => $completedDate,
-                    'notes' => 'Settlement transferred to bank account',
+                    'notes' => 'Settlement for ' . $transactions->count() . ' transactions',
                     'approval_status' => 'approved',
                     'approved_at' => $completedDate->copy()->subDays(1),
                     'created_at' => $completedDate->subDays(5),
                     'updated_at' => $completedDate,
                 ]);
+
+                // Link all transactions to this settlement
+                foreach ($transactions as $txn) {
+                    $txn->update(['settlement_id' => $settlement->id]);
+                    $linked++;
+                }
+
                 $created++;
             }
         }
 
-        $this->command->info("✓ Created {$created} settlements");
+        $this->command->info("✓ Created {$created} settlements with {$linked} linked transactions");
     }
 }
