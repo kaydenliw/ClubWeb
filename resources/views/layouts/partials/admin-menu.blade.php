@@ -121,7 +121,7 @@
 <div class="mb-6">
     <h3 class="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">System</h3>
     <ul class="space-y-1">
-        <li>
+        {{-- <li>
             <a href="{{ route('admin.activity-logs.index') }}"
                class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-all {{ request()->routeIs('admin.activity-logs.*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50' }}">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,6 +129,6 @@
                 </svg>
                 Activity Logs
             </a>
-        </li>
+        </li> --}}
     </ul>
 </div>

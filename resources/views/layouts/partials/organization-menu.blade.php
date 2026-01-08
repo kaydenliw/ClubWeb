@@ -72,7 +72,7 @@
                 Reports
             </a>
         </li>
-        <li>
+        {{-- <li>
             <a href="{{ route('organization.activity-logs.index') }}"
                class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-all {{ request()->routeIs('organization.activity-logs.*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50' }}">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,7 +80,7 @@
                 </svg>
                 Activity Logs
             </a>
-        </li>
+        </li> --}}
     </ul>
 </div>
 
