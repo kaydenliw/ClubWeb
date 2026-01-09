@@ -106,8 +106,8 @@ class Member extends Model
                 // Map recurring frequency to display format
                 if ($charge->recurring_frequency === 'monthly' && $charge->recurring_months == 1) {
                     return 'Monthly';
-                } elseif ($charge->recurring_frequency === 'monthly' && $charge->recurring_months == 3) {
-                    return '3 Months';
+                } elseif ($charge->recurring_frequency === 'monthly' && $charge->recurring_months > 1) {
+                    return $charge->recurring_months . ' Months';
                 } elseif ($charge->recurring_frequency === 'one-time') {
                     return 'One-time';
                 } else {

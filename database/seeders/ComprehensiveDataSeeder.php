@@ -158,33 +158,49 @@ class ComprehensiveDataSeeder extends Seeder
 
             foreach ($members as $member) {
                 // ENSURE EVERY MEMBER HAS AT LEAST ONE RECURRING CHARGE (no N/A)
-                // Get recurring charges (monthly, annually, etc.)
-                $recurringCharges = $charges->filter(function($charge) {
-                    return $charge->is_recurring && in_array($charge->recurring_frequency, ['monthly', 'bi-monthly', 'semi-annually', 'annually']);
+                // Prioritize Monthly, 3 Months, and One-time charges
+                $monthlyCharges = $charges->filter(function($charge) {
+                    return $charge->recurring_frequency === 'monthly' && $charge->recurring_months == 1;
                 });
 
-                // If no recurring charges, use any active charge
-                if ($recurringCharges->isEmpty()) {
-                    $recurringCharges = $charges;
-                }
+                $threeMonthCharges = $charges->filter(function($charge) {
+                    return $charge->recurring_frequency === 'monthly' && $charge->recurring_months == 3;
+                });
 
-                // Assign 2-3 charges to each member (at least 1 recurring for payment status)
-                $numCharges = min(rand(2, 3), $charges->count());
+                $oneTimeCharges = $charges->filter(function($charge) {
+                    return $charge->recurring_frequency === 'one-time';
+                });
 
-                // Always include at least one recurring charge first
+                // Assign 1-2 charges to each member from the preferred types
                 $chargesToAssign = collect();
-                if ($recurringCharges->isNotEmpty()) {
-                    $chargesToAssign->push($recurringCharges->random());
+
+                // Randomly pick from Monthly, 3 Months, or One-time
+                $availableTypes = [];
+                if ($monthlyCharges->isNotEmpty()) $availableTypes[] = 'monthly';
+                if ($threeMonthCharges->isNotEmpty()) $availableTypes[] = 'three_months';
+                if ($oneTimeCharges->isNotEmpty()) $availableTypes[] = 'one_time';
+
+                if (!empty($availableTypes)) {
+                    // Assign 1-2 random charge types
+                    $numCharges = rand(1, 2);
+                    shuffle($availableTypes);
+
+                    for ($i = 0; $i < min($numCharges, count($availableTypes)); $i++) {
+                        $type = $availableTypes[$i];
+
+                        if ($type === 'monthly' && $monthlyCharges->isNotEmpty()) {
+                            $chargesToAssign->push($monthlyCharges->random());
+                        } elseif ($type === 'three_months' && $threeMonthCharges->isNotEmpty()) {
+                            $chargesToAssign->push($threeMonthCharges->random());
+                        } elseif ($type === 'one_time' && $oneTimeCharges->isNotEmpty()) {
+                            $chargesToAssign->push($oneTimeCharges->random());
+                        }
+                    }
                 }
 
-                // Add additional random charges
-                $remainingCount = $numCharges - $chargesToAssign->count();
-                if ($remainingCount > 0 && $charges->count() > 1) {
-                    $additionalCharges = $charges->whereNotIn('id', $chargesToAssign->pluck('id'))
-                        ->random(min($remainingCount, $charges->count() - 1));
-                    $chargesToAssign = $chargesToAssign->merge(
-                        is_iterable($additionalCharges) ? $additionalCharges : [$additionalCharges]
-                    );
+                // If no preferred charges found, fall back to any active charge
+                if ($chargesToAssign->isEmpty() && $charges->isNotEmpty()) {
+                    $chargesToAssign->push($charges->random());
                 }
 
                 foreach ($chargesToAssign as $charge) {
