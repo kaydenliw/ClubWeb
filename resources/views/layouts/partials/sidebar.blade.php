@@ -3,15 +3,10 @@
     <div class="p-6 border-b border-gray-100">
         @if(auth()->user()->role === 'super_admin')
             <div class="flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg p-4">
-                <img src="{{ asset('logos/mymember_logo_white_borderless.jpg') }}" alt="MyMember Logo" class="h-12 w-auto">
+                <img src="{{ asset('logos/mymember_logo.png') }}" alt="MyMember Logo" class="h-12 w-auto">
             </div>
             <p class="text-xs text-gray-500 text-center mt-2">Admin Panel</p>
         @else
-            <!-- MyMember Logo -->
-            <div class="flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg p-3 mb-4">
-                <img src="{{ asset('logos/mymember_logo_white_borderless.jpg') }}" alt="MyMember Logo" class="h-10 w-auto">
-            </div>
-
             <!-- Organization Info -->
             <div class="flex items-center space-x-3">
                 @if(auth()->user()->organization && auth()->user()->organization->logo)
