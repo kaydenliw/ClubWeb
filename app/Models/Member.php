@@ -101,20 +101,9 @@ class Member extends Model
     public function getChargesDisplayAttribute()
     {
         return $this->charges()
+            ->where('is_recurring', true)
             ->get()
-            ->map(function($charge) {
-                // Map recurring frequency to display format
-                if ($charge->recurring_frequency === 'monthly' && $charge->recurring_months == 1) {
-                    return 'Monthly';
-                } elseif ($charge->recurring_frequency === 'monthly' && $charge->recurring_months > 1) {
-                    return $charge->recurring_months . ' Months';
-                } elseif ($charge->recurring_frequency === 'one-time') {
-                    return 'One-time';
-                } else {
-                    // For other frequencies, use the default formatting
-                    return ucwords(str_replace('-', ' ', $charge->recurring_frequency));
-                }
-            })
+            ->pluck('title')
             ->unique()
             ->implode(', ');
     }

@@ -109,7 +109,7 @@
                         @if($organization->organizationType && $organization->organizationType->slug === 'car_club')
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Car Details</th>
                         @endif
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Charges</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subscription Plan</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Payment Status</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Next Renewal</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>

@@ -40,11 +40,26 @@ class AnnouncementController extends Controller
             'content' => 'required|string',
             'publish_date' => 'nullable|date',
             'approval_status' => 'nullable|in:draft,pending_approval',
+            'is_highlighted' => 'nullable|boolean',
         ]);
+
+        // Check if trying to highlight and if limit is reached
+        if ($request->has('is_highlighted') && $request->is_highlighted) {
+            $highlightedCount = Announcement::where('organization_id', auth()->user()->organization_id)
+                ->where('is_highlighted', true)
+                ->count();
+
+            if ($highlightedCount >= 5) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['is_highlighted' => 'Maximum of 5 announcements can be highlighted. Please remove highlight from another announcement first.']);
+            }
+        }
 
         $validated['organization_id'] = auth()->user()->organization_id;
         $validated['created_by'] = auth()->id();
         $validated['approval_status'] = $validated['approval_status'] ?? 'draft';
+        $validated['is_highlighted'] = $request->has('is_highlighted') ? true : false;
 
         Announcement::create($validated);
 
@@ -81,7 +96,24 @@ class AnnouncementController extends Controller
             'content' => 'required|string',
             'publish_date' => 'nullable|date',
             'approval_status' => 'nullable|in:draft,pending_approval',
+            'is_highlighted' => 'nullable|boolean',
         ]);
+
+        // Check if trying to highlight and if limit is reached
+        if ($request->has('is_highlighted') && $request->is_highlighted && !$announcement->is_highlighted) {
+            $highlightedCount = Announcement::where('organization_id', auth()->user()->organization_id)
+                ->where('is_highlighted', true)
+                ->where('id', '!=', $announcement->id)
+                ->count();
+
+            if ($highlightedCount >= 5) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['is_highlighted' => 'Maximum of 5 announcements can be highlighted. Please remove highlight from another announcement first.']);
+            }
+        }
+
+        $validated['is_highlighted'] = $request->has('is_highlighted') ? true : false;
 
         $announcement->update($validated);
 
@@ -150,5 +182,44 @@ class AnnouncementController extends Controller
 
         return redirect()->route('organization.announcements.show', $announcement)
             ->with('success', 'Announcement submitted for approval.');
+    }
+
+    public function toggleHighlight(Request $request)
+    {
+        $request->validate([
+            'announcement_id' => 'required|exists:announcements,id',
+            'is_highlighted' => 'required|boolean',
+        ]);
+
+        $announcement = Announcement::findOrFail($request->announcement_id);
+
+        if ($announcement->organization_id !== auth()->user()->organization_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized action.'
+            ], 403);
+        }
+
+        // Check if trying to highlight and if limit is reached
+        if ($request->is_highlighted) {
+            $highlightedCount = Announcement::where('organization_id', auth()->user()->organization_id)
+                ->where('is_highlighted', true)
+                ->where('id', '!=', $announcement->id)
+                ->count();
+
+            if ($highlightedCount >= 5) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Maximum of 5 announcements can be highlighted. Please remove highlight from another announcement first.'
+                ], 422);
+            }
+        }
+
+        $announcement->update(['is_highlighted' => $request->is_highlighted]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $request->is_highlighted ? 'Announcement highlighted successfully.' : 'Highlight removed successfully.'
+        ]);
     }
 }

@@ -108,6 +108,7 @@ Route::prefix('organization')->middleware(['auth', 'role:organization_admin'])->
     Route::post('announcements/{announcement}/submit', [App\Http\Controllers\Organization\AnnouncementController::class, 'submitForApproval'])->name('organization.announcements.submit');
     Route::post('announcements/bulk-delete', [App\Http\Controllers\Organization\AnnouncementController::class, 'bulkDelete'])->name('organization.announcements.bulk-delete');
     Route::post('announcements/bulk-update-status', [App\Http\Controllers\Organization\AnnouncementController::class, 'bulkUpdateStatus'])->name('organization.announcements.bulk-update-status');
+    Route::post('announcements/toggle-highlight', [App\Http\Controllers\Organization\AnnouncementController::class, 'toggleHighlight'])->name('organization.announcements.toggle-highlight');
     Route::resource('faqs', App\Http\Controllers\Organization\FaqController::class)->except(['show'])->names('organization.faqs');
     Route::post('faqs/bulk-delete', [App\Http\Controllers\Organization\FaqController::class, 'bulkDelete'])->name('organization.faqs.bulk-delete');
     Route::post('faqs/reorder', [App\Http\Controllers\Organization\FaqController::class, 'reorder'])->name('organization.faqs.reorder');

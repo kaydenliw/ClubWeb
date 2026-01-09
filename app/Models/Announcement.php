@@ -21,6 +21,7 @@ class Announcement extends Model
         'publish_date',
         'approval_status',
         'reject_reason',
+        'is_highlighted',
     ];
 
     protected $casts = [
@@ -28,6 +29,7 @@ class Announcement extends Model
         'is_published' => 'boolean',
         'published_at' => 'datetime',
         'publish_date' => 'datetime',
+        'is_highlighted' => 'boolean',
     ];
 
     public function organization()

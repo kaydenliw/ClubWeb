@@ -125,11 +125,8 @@
                     <select name="recurring_months" id="recurring_months"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         <option value="">Select frequency</option>
-                        @for($i = 1; $i <= 12; $i++)
-                            <option value="{{ $i }}" {{ old('recurring_months') == $i ? 'selected' : '' }}>
-                                Every {{ $i }} {{ $i == 1 ? 'month' : 'months' }}
-                            </option>
-                        @endfor
+                        <option value="1" {{ old('recurring_months') == 1 ? 'selected' : '' }}>Monthly</option>
+                        <option value="3" {{ old('recurring_months') == 3 ? 'selected' : '' }}>3 Months</option>
                     </select>
                     <p class="mt-1 text-xs text-gray-500">How often members will be charged for this plan</p>
                 </div>

@@ -84,6 +84,7 @@
                         </th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Title</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Highlight</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Published Date</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Created</th>
                         <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
@@ -110,6 +111,16 @@
                                 @endif">
                                 {{ str_replace('_', ' ', ucwords($announcement->approval_status, '_')) }}
                             </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <button type="button"
+                                    onclick="toggleHighlight({{ $announcement->id }}, {{ $announcement->is_highlighted ? '0' : '1' }})"
+                                    class="inline-flex items-center justify-center w-10 h-10 rounded-lg transition {{ $announcement->is_highlighted ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200' }}"
+                                    title="{{ $announcement->is_highlighted ? 'Remove highlight' : 'Add highlight' }}">
+                                <svg class="w-5 h-5" fill="{{ $announcement->is_highlighted ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                                </svg>
+                            </button>
                         </td>
                         <td class="px-4 py-3">
                             <span class="text-sm text-gray-600">
@@ -170,7 +181,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-8 text-center text-sm text-gray-500">
+                        <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">
                             No announcements found. Create your first announcement to get started.
                         </td>
                     </tr>
@@ -187,9 +198,9 @@
 $(document).ready(function() {
     $('#announcementsTable').DataTable({
         "pageLength": 10,
-        "order": [[4, "desc"]],
+        "order": [[5, "desc"]],
         "columnDefs": [
-            { "orderable": false, "targets": [0, 5] }
+            { "orderable": false, "targets": [0, 3, 6] }
         ],
         "language": {
             "paginate": {
@@ -301,6 +312,30 @@ function bulkDelete() {
         'Delete',
         'red'
     );
+}
+
+function toggleHighlight(announcementId, highlight) {
+    $.ajax({
+        url: '{{ route("organization.announcements.toggle-highlight") }}',
+        method: 'POST',
+        data: {
+            _token: '{{ csrf_token() }}',
+            announcement_id: announcementId,
+            is_highlighted: highlight
+        },
+        success: function(response) {
+            if (response.success) {
+                showToast(response.message, 'success');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                showToast(response.message, 'error');
+            }
+        },
+        error: function(xhr) {
+            const message = xhr.responseJSON?.message || 'Error updating highlight status';
+            showToast(message, 'error');
+        }
+    });
 }
 </script>
 @endpush

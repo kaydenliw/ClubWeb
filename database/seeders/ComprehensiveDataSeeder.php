@@ -140,6 +140,11 @@ class ComprehensiveDataSeeder extends Seeder
 
     private function assignChargesToMembers()
     {
+        $this->command->info('Cleaning existing charge-member relationships...');
+
+        // Clean all existing charge-member relationships
+        DB::table('charge_member')->delete();
+
         $this->command->info('Assigning charges to members via charge_member pivot...');
 
         $organizations = Organization::all();
@@ -157,50 +162,40 @@ class ComprehensiveDataSeeder extends Seeder
             }
 
             foreach ($members as $member) {
-                // ENSURE EVERY MEMBER HAS AT LEAST ONE RECURRING CHARGE (no N/A)
-                // Prioritize Monthly, 3 Months, and One-time charges
-                $monthlyCharges = $charges->filter(function($charge) {
-                    return $charge->recurring_frequency === 'monthly' && $charge->recurring_months == 1;
+                // Assign subscription plans to members (only recurring charges)
+                // Get Basic, Gold, and Platinum membership plans
+                $basicPlan = $charges->filter(function($charge) {
+                    return $charge->title === 'Basic Membership' && $charge->is_recurring;
                 });
 
-                $threeMonthCharges = $charges->filter(function($charge) {
-                    return $charge->recurring_frequency === 'monthly' && $charge->recurring_months == 3;
+                $goldPlan = $charges->filter(function($charge) {
+                    return $charge->title === 'Gold Membership' && $charge->is_recurring;
                 });
 
-                $oneTimeCharges = $charges->filter(function($charge) {
-                    return $charge->recurring_frequency === 'one-time';
+                $platinumPlan = $charges->filter(function($charge) {
+                    return $charge->title === 'Platinum Membership' && $charge->is_recurring;
                 });
 
-                // Assign 1-2 charges to each member from the preferred types
+                // Assign 1 subscription plan to each member
                 $chargesToAssign = collect();
 
-                // Randomly pick from Monthly, 3 Months, or One-time
-                $availableTypes = [];
-                if ($monthlyCharges->isNotEmpty()) $availableTypes[] = 'monthly';
-                if ($threeMonthCharges->isNotEmpty()) $availableTypes[] = 'three_months';
-                if ($oneTimeCharges->isNotEmpty()) $availableTypes[] = 'one_time';
+                // Randomly assign one of the three plans
+                $availablePlans = [];
+                if ($basicPlan->isNotEmpty()) $availablePlans[] = $basicPlan->first();
+                if ($goldPlan->isNotEmpty()) $availablePlans[] = $goldPlan->first();
+                if ($platinumPlan->isNotEmpty()) $availablePlans[] = $platinumPlan->first();
 
-                if (!empty($availableTypes)) {
-                    // Assign 1-2 random charge types
-                    $numCharges = rand(1, 2);
-                    shuffle($availableTypes);
-
-                    for ($i = 0; $i < min($numCharges, count($availableTypes)); $i++) {
-                        $type = $availableTypes[$i];
-
-                        if ($type === 'monthly' && $monthlyCharges->isNotEmpty()) {
-                            $chargesToAssign->push($monthlyCharges->random());
-                        } elseif ($type === 'three_months' && $threeMonthCharges->isNotEmpty()) {
-                            $chargesToAssign->push($threeMonthCharges->random());
-                        } elseif ($type === 'one_time' && $oneTimeCharges->isNotEmpty()) {
-                            $chargesToAssign->push($oneTimeCharges->random());
-                        }
-                    }
+                if (!empty($availablePlans)) {
+                    // Assign 1 random plan
+                    $chargesToAssign->push($availablePlans[array_rand($availablePlans)]);
                 }
 
-                // If no preferred charges found, fall back to any active charge
-                if ($chargesToAssign->isEmpty() && $charges->isNotEmpty()) {
-                    $chargesToAssign->push($charges->random());
+                // If no subscription plans found, fall back to any recurring charge
+                if ($chargesToAssign->isEmpty()) {
+                    $recurringCharges = $charges->where('is_recurring', true);
+                    if ($recurringCharges->isNotEmpty()) {
+                        $chargesToAssign->push($recurringCharges->random());
+                    }
                 }
 
                 foreach ($chargesToAssign as $charge) {

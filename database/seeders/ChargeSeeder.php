@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use App\Models\Charge;
 use App\Models\Organization;
 
@@ -10,100 +11,69 @@ class ChargeSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->command->info('Cleaning existing charges...');
+
+        // Delete charge-member relationships first (foreign key constraint)
+        DB::table('charge_member')->delete();
+
+        // Delete all existing charges to prevent duplicates
+        Charge::query()->delete();
+
+        $this->command->info('Creating new charges...');
+
         $organizations = Organization::all();
 
         foreach ($organizations as $org) {
-            // Sample 1: Monthly recurring - Draft
+            // Sample 1: Basic Membership - Monthly
             Charge::create([
                 'organization_id' => $org->id,
-                'title' => 'Monthly Membership Fee',
-                'description' => '<p>Regular monthly membership fee for all active members.</p><ul><li>Access to all facilities</li><li>Member events</li><li>Monthly newsletter</li></ul>',
+                'title' => 'Basic Membership',
+                'description' => '<p>Basic membership plan with essential benefits.</p><ul><li>Access to all facilities</li><li>Member events</li><li>Monthly newsletter</li><li>Basic support</li></ul>',
                 'amount' => 50.00,
                 'type' => 'charge',
                 'recurring_frequency' => 'monthly',
                 'is_recurring' => true,
                 'recurring_months' => 1,
                 'status' => 'active',
-                'workflow_status' => 'draft',
-                'approval_status' => 'pending',
             ]);
 
-            // Sample 2: Quarterly - Submitted
+            // Sample 2: Gold Membership - 3 Months
             Charge::create([
                 'organization_id' => $org->id,
-                'title' => 'Quarterly Maintenance Fee',
-                'description' => '<p>Quarterly maintenance and upkeep fee.</p><ul><li>Facility maintenance</li><li>Equipment servicing</li></ul>',
+                'title' => 'Gold Membership',
+                'description' => '<p>Gold membership plan with premium benefits.</p><ul><li>All Basic benefits</li><li>Priority booking</li><li>Exclusive events access</li><li>Premium support</li><li>10% discount on merchandise</li></ul>',
                 'amount' => 150.00,
                 'type' => 'charge',
                 'recurring_frequency' => 'monthly',
                 'is_recurring' => true,
                 'recurring_months' => 3,
                 'status' => 'active',
-                'workflow_status' => 'submitted',
-                'approval_status' => 'pending',
-                'scheduled_at' => now()->addDays(7),
             ]);
 
-            // Sample 3: Semi-annually - Approved
+            // Sample 3: Platinum Membership - Monthly
             Charge::create([
                 'organization_id' => $org->id,
-                'title' => 'Semi-Annual Premium Plan',
-                'description' => '<p><strong>Premium membership benefits:</strong></p><ul><li>Priority booking</li><li>Exclusive events access</li><li>VIP parking</li><li>Complimentary guest passes</li></ul>',
-                'amount' => 500.00,
+                'title' => 'Platinum Membership',
+                'description' => '<p>Platinum membership plan with VIP benefits.</p><ul><li>All Gold benefits</li><li>VIP lounge access</li><li>Personal concierge service</li><li>Unlimited guest passes</li><li>20% discount on all services</li><li>Priority customer support</li></ul>',
+                'amount' => 200.00,
                 'type' => 'charge',
-                'recurring_frequency' => 'semi-annually',
+                'recurring_frequency' => 'monthly',
                 'is_recurring' => true,
-                'recurring_months' => 6,
+                'recurring_months' => 1,
                 'status' => 'active',
-                'workflow_status' => 'approved',
-                'approval_status' => 'approved',
-                'scheduled_at' => now()->addDays(3),
             ]);
 
-            // Sample 4: Annual - Active
-            Charge::create([
-                'organization_id' => $org->id,
-                'title' => 'Annual Platinum Membership',
-                'description' => '<p><strong>Platinum tier includes:</strong></p><ul><li>All premium benefits</li><li>Personal concierge service</li><li>Unlimited guest passes</li><li>Annual gala invitation</li><li>Reserved parking spot</li></ul>',
-                'amount' => 2000.00,
-                'type' => 'charge',
-                'recurring_frequency' => 'annually',
-                'is_recurring' => true,
-                'recurring_months' => 12,
-                'status' => 'active',
-                'workflow_status' => 'active',
-                'approval_status' => 'approved',
-            ]);
-
-            // Sample 5: One-time - Active
+            // Sample 4: Registration Fee - One-time
             Charge::create([
                 'organization_id' => $org->id,
                 'title' => 'Registration Fee',
-                'description' => '<p>One-time registration fee for new members.</p><p>Includes:</p><ul><li>Welcome kit</li><li>Member card</li><li>Orientation session</li></ul>',
+                'description' => '<p>One-time registration fee for new members.</p><p>Includes:</p><ul><li>Welcome kit</li><li>Member card</li><li>Orientation session</li><li>Official membership certificate</li></ul>',
                 'amount' => 100.00,
                 'type' => 'charge',
                 'recurring_frequency' => 'one-time',
                 'is_recurring' => false,
                 'recurring_months' => null,
                 'status' => 'active',
-                'workflow_status' => 'active',
-                'approval_status' => 'approved',
-            ]);
-
-            // Sample 6: Bi-monthly - Rejected
-            Charge::create([
-                'organization_id' => $org->id,
-                'title' => 'Bi-Monthly Event Fee',
-                'description' => '<p>Special events and activities fee charged every 2 months.</p>',
-                'amount' => 80.00,
-                'type' => 'charge',
-                'recurring_frequency' => 'bi-monthly',
-                'is_recurring' => true,
-                'recurring_months' => 2,
-                'status' => 'active',
-                'workflow_status' => 'rejected',
-                'approval_status' => 'rejected',
-                'reject_reason' => 'The pricing is too high compared to similar organizations. Please revise to RM 50-60 range.',
             ]);
         }
     }

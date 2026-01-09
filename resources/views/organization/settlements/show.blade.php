@@ -77,6 +77,7 @@
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Transaction ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Charge/Plan</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Amount</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Platform Fee</th>
@@ -88,6 +89,9 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3">
                             <span class="text-sm font-medium text-gray-900">#{{ str_pad($txn->id, 6, '0', STR_PAD_LEFT) }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm text-gray-900">{{ $txn->created_at->format('d/m/Y H:i') }}</span>
                         </td>
                         <td class="px-4 py-3">
                             <span class="text-sm text-gray-900">{{ $txn->charge ? $txn->charge->title : '-' }}</span>
@@ -106,7 +110,7 @@
 
                     <!-- TOTAL Row -->
                     <tr class="bg-blue-50 font-semibold border-t-2 border-blue-200">
-                        <td colspan="2" class="px-4 py-3 text-right text-sm text-gray-900">TOTAL:</td>
+                        <td colspan="3" class="px-4 py-3 text-right text-sm text-gray-900">TOTAL:</td>
                         <td class="px-4 py-3">
                             <span class="text-sm font-bold text-gray-900">RM {{ number_format($totalAmount, 2) }}</span>
                         </td>

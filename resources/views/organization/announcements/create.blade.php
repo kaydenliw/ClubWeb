@@ -70,6 +70,24 @@
                         Publish immediately
                     </label>
                 </div>
+
+                <!-- Highlight Status -->
+                <div>
+                    <div class="flex items-center">
+                        <input type="checkbox"
+                               name="is_highlighted"
+                               id="is_highlighted"
+                               value="1"
+                               {{ old('is_highlighted') ? 'checked' : '' }}
+                               class="w-4 h-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500">
+                        <label for="is_highlighted" class="ml-2 text-sm text-gray-700">
+                            Highlight this announcement (max 5)
+                        </label>
+                    </div>
+                    @error('is_highlighted')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
 
             <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
